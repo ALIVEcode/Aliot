@@ -6,11 +6,11 @@ if __name__ == "__main__":
           version='0.1.0',
           description='python IOT library compatible with the ALIVE ecosystem',
           packages=find_packages(
-              include=['aliot.aliot', 'aliot.aliot.*']),
+              include=['aliot.', 'aliot.*']),
           install_requires=[
               'msgpack',
               'schedule',
-              'websocket'
+              'websocket-client'
           ],
           setup_requires=['flake8', 'autopep8']
           )
