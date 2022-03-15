@@ -1,9 +1,6 @@
-from typing import Union, List
-
-import msgpack
+from typing import List
 from threading import Thread
-import schedule
-import json, requests, time, websocket
+import json, requests, websocket, re
 from aliot.aliot.utils import Style
 
 style_print = Style.style_print
@@ -12,12 +9,16 @@ style_print = Style.style_print
 class URLNotDefinedException(Exception):
     """Exception raised when a new ObjConnecte instance is created and __URL is not defined"""
 
+class InvalidURLException(Exception):
+    """Exception raised when a setting an invalid URL"""
+
 
 _no_value = object()
 
 
 class ObjConnecteAlive:
     __URL = 'wss://alivecode.ca/iotgateway/'
+    __API_URL = 'https://alivecode.ca/api'
 
     # nb de request max par interval (en ms)
     __bottleneck_capacity = {"max_send": 30,
@@ -26,6 +27,10 @@ class ObjConnecteAlive:
     @classmethod
     def set_url(cls, url: str):
         cls.__URL = url
+    
+    @classmethod
+    def set_api_url(cls, api_url: str):
+        cls.__API_URL = api_url[:-1] if api_url.endswith('/') else api_url
 
     def __new__(cls, *args, **kwargs):
         if not cls.__URL:
@@ -146,7 +151,7 @@ class ObjConnecteAlive:
                        })
 
     def get_doc(self, projectId):
-        res = requests.post('http://localhost:8000/api/iot/aliot/getDoc', { 'projectId': projectId, 'objectId': self.__key})
+        res = requests.post(f'{self.__API_URL}/iot/aliot/getDoc', { 'projectId': projectId, 'objectId': self.__key})
         if res.status_code == 201:
             return json.loads(res.text) if res.text else None
         elif res.status_code == 403:
@@ -158,7 +163,7 @@ class ObjConnecteAlive:
 
 
     def get_field(self, projectId, field: str):
-        res = requests.post('http://localhost:8000/api/iot/aliot/getField', { 'projectId': projectId, 'objectId': self.__key, 'field': field})
+        res = requests.post(f'{self.__API_URL}/iot/aliot/getField', { 'projectId': projectId, 'objectId': self.__key, 'field': field})
         if res.status_code == 201:
             return json.loads(res.text) if res.text else None
         elif res.status_code == 403:
