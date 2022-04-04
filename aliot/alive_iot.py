@@ -1,7 +1,8 @@
-from typing import List
+from typing import Callable, List, Optional, Union
 from threading import Thread
-import json, requests, websocket, re
-from aliot.aliot.utils import Style
+import json, requests, websocket
+from aliot.aliot.utils import IOT_EVENT, Style
+from itertools import chain
 
 style_print = Style.style_print
 
@@ -42,11 +43,12 @@ class ObjConnecteAlive:
     def __init__(self, object_id: str):
         if not isinstance(object_id, str):
             raise ValueError("the value of id_ must be a string")
-        self.__key = object_id
+        self.__id = object_id
         self.__protocols = {}
-        self.__listeners = {}
-        self.__broadcast_listeners = {}
-        self.__running = False
+        self.__listeners = []
+        self.__broadcast_listener: Optional[Callable[[dict], None]] = None
+        self.__connected_to_alivecode = False
+        self.__connected = False
         self.ws: websocket.WebSocketApp  = None
         self.__main_loop = None
         self.__repeats = 0
@@ -62,16 +64,16 @@ class ObjConnecteAlive:
         return self.__listeners.copy()
 
     @property
-    def broadcast_listeners(self):
-        return self.__broadcast_listeners.copy()
+    def broadcast_listener(self):
+        return self.__broadcast_listener
 
     @property
-    def connected(self):
-        return self.__running
+    def connected_to_alivecode(self):
+        return self.__connected_to_alivecode
 
-    @connected.setter
-    def connected(self, value: bool):
-        self.__running = value
+    @connected_to_alivecode.setter
+    def connected_to_alivecode(self, value: bool):
+        self.__connected_to_alivecode = value
         if not value:
             self.ws.close()
 
@@ -88,14 +90,11 @@ class ObjConnecteAlive:
 
         return inner
 
-    def listen(self, projectId: str, fields: List[str]):
+    def listen(self, fields: List[str]):
         def inner(func):
             def wrapper(fields: dict):
                 result = func(fields)
-
-            if projectId not in self.__listeners:
-                self.__listeners[projectId] = []
-            self.__listeners[projectId].append({
+            self.__listeners.append({
                 'func': wrapper,
                 'fields': fields
             })
@@ -103,14 +102,12 @@ class ObjConnecteAlive:
 
         return inner
 
-    def listen_broadcast(self, projectId: str):
+    def listen_broadcast(self):
         def inner(func):
             def wrapper(fields: dict):
                 result = func(fields)
 
-            if projectId not in self.__listeners:
-                self.__broadcast_listeners[projectId] = []
-            self.__broadcast_listeners[projectId] = wrapper
+            self.__broadcast_listener = wrapper
             return wrapper
 
         return inner
@@ -118,15 +115,15 @@ class ObjConnecteAlive:
     def main_loop(self, repetitions=None):
         def inner(main_loop_func):
             def wrapper():
-                while not self.connected:
+                while not self.connected_to_alivecode:
                     pass
                 if repetitions is not None:
                     for _ in range(repetitions):
-                        if not self.connected:
+                        if not self.connected_to_alivecode:
                             break
                         main_loop_func()
                 else:
-                    while self.connected:
+                    while self.connected_to_alivecode:
                         main_loop_func()
 
             self.__main_loop = wrapper
@@ -134,24 +131,23 @@ class ObjConnecteAlive:
 
         return inner
 
-    def send_update(self, projectId: str, id: str,  value):
-        self.sendEvent('send_update', {
-                       'projectId': projectId, 'id': id, 'value': value
+    def update_component(self, id: str,  value):
+        self.__send_event(IOT_EVENT.UPDATE_COMPONENT, {
+                       'id': id, 'value': value
                        })
 
-    def broadcast(self, projectId: str, data: dict):
-        self.sendEvent('broadcast', {
-                       'projectId': projectId, 'data': data
+    def broadcast(self, data: dict):
+        self.__send_event(IOT_EVENT.SEND_BROADCAST, {
+                       'data': data
                        })
 
-    def update(self, projectId: str, fields: dict):
-        self.sendEvent('update', {
-                       'projectId': projectId,
+    def update_doc(self,fields: dict):
+        self.__send_event(IOT_EVENT.UPDATE_DOC, {
                        'fields': fields,
                        })
 
-    def get_doc(self, projectId):
-        res = requests.post(f'{self.__API_URL}/iot/aliot/getDoc', { 'projectId': projectId, 'objectId': self.__key})
+    def get_doc(self):
+        res = requests.post(f'{self.__API_URL}/iot/aliot/getDoc', { 'objectId': self.__id})
         if res.status_code == 201:
             return json.loads(res.text) if res.text else None
         elif res.status_code == 403:
@@ -162,8 +158,8 @@ class ObjConnecteAlive:
             style_print(f"&c[ERROR UNKNOWN] while getting the document, please try again.")
 
 
-    def get_field(self, projectId, field: str):
-        res = requests.post(f'{self.__API_URL}/iot/aliot/getField', { 'projectId': projectId, 'objectId': self.__key, 'field': field})
+    def get_field(self, field: str):
+        res = requests.post(f'{self.__API_URL}/iot/aliot/getField', { 'objectId': self.__id, 'field': field})
         if res.status_code == 201:
             return json.loads(res.text) if res.text else None
         elif res.status_code == 403:
@@ -175,14 +171,12 @@ class ObjConnecteAlive:
 
 
     def send_route(self, routePath: str, data: dict):
-        projectId, routePath = routePath.split("/")
-        self.sendEvent('send_route', {
-            'projectId': projectId,
+        self.__send_event(IOT_EVENT.SEND_ROUTE, {
             'routePath': routePath,
             'data': data
         })
 
-    def sendEvent(self, event: str, data: dict):
+    def __send_event(self, event: IOT_EVENT, data: Union[dict, None]):
 
         """
         if self.__last_freeze and time.time() - self.__last_freeze > self.__bottleneck_capacity["interval"]:
@@ -200,11 +194,11 @@ class ObjConnecteAlive:
             time.sleep(self.__bottleneck_capacity["sleep_interval"])
 
         """
-        if self.connected:
-            self.ws.send(json.dumps({'event': event, 'data': data}, default=str))
+        if self.__connected:
+            self.ws.send(json.dumps({'event': event.value[0], 'data': data}, default=str))
             self.__repeats += 1
 
-    def execute_protocol(self, msg):
+    def __execute_protocol(self, msg):
         print(msg)
         must_have_keys = "id", "value"
         if not all(key in msg for key in must_have_keys):
@@ -215,8 +209,8 @@ class ObjConnecteAlive:
         protocol = self.protocols.get(msg_id)
 
         if protocol is None:
-            if self.connected:
-                self.connected = False
+            if self.connected_to_alivecode:
+                self.connected_to_alivecode = False
             style_print(
                 f"&c[ERROR] the protocol with the id {msg_id!r} is not implemented")
 
@@ -225,71 +219,69 @@ class ObjConnecteAlive:
         else:
             protocol(msg["value"])
 
-    def execute_listen(self, projectId: str, fields: dict):
-        projectListeners = self.listeners.get(projectId)
-        if projectListeners:
-            for listener in projectListeners:
-                fieldsToReturn = dict(filter(lambda el: el[0] in listener['fields'], fields.items()))
-                if len(fieldsToReturn) > 0:
-                    listener["func"](fieldsToReturn)
+    def __execute_listen(self, fields: dict):
+        for listener in self.listeners:
+            fieldsToReturn = dict(filter(lambda el: el[0] in listener['fields'], fields.items()))
+            if len(fieldsToReturn) > 0:
+                listener["func"](fieldsToReturn)
 
 
-    def execute_broadcast(self, projectId: str, data: dict):
-        listener = self.broadcast_listeners.get(projectId)
-        if listener:
-            listener(data)
+    def __execute_broadcast(self, data: dict):
+        if self.broadcast_listener:
+            self.broadcast_listener(data)
 
 
-    def on_message(self, ws, message):
+    def __on_message(self, ws, message):
         msg = json.loads(message)
 
-        event = msg['event']
+        event: IOT_EVENT = msg['event']
         data = msg['data']
 
-        if event == "action":
+        if event == IOT_EVENT.RECEIVE_ACTION.value[0]:
             if isinstance(data, list):
                 for m in data:
-                    self.execute_protocol(m)
+                    self.__execute_protocol(m)
             else:
-                self.execute_protocol(data)
-        elif event == "listen":
-            self.execute_listen(data['projectId'], data['fields'])
-        elif event == 'broadcast':
-            self.execute_broadcast(data['projectId'], data['data'])
-        elif event == 'connected':
-
+                self.__execute_protocol(data)
+        elif event == IOT_EVENT.RECEIVE_LISTEN.value[0]:
+            self.__execute_listen(data['fields'])
+        elif event == IOT_EVENT.RECEIVE_BROADCAST.value[0]:
+            self.__execute_broadcast(data['data'])
+        elif event == IOT_EVENT.CONNECT_SUCCESS.value[0]:
+            
             if len(self.__listeners) == 0:
                 style_print("&a[CONNECTED]")
-                self.__running = True
+                self.connected_to_alivecode = True
             else:
                 # Register listeners on ALIVEcode
-                for projectId, projectListeners in self.listeners.items():
-                    fields = sorted(set([f for listener in projectListeners for f in listener['fields']]))
-                    self.ws.send(json.dumps(
-                        {'event': 'listen', 'data': {'projectId': projectId, 'fields': fields}}))
-        elif event == 'listener_set':
+                fields = sorted(set([field for l in self.listeners for field in l['fields']]))
+                self.__send_event(IOT_EVENT.SUBSCRIBE_LISTENER, { 'fields': fields })
+        elif event == IOT_EVENT.SUBSCRIBE_LISTENER_SUCCESS.value[0]:
             self.__listeners_set += 1
             if self.__listeners_set == len(self.__listeners):
                 style_print("&a[CONNECTED]")
-                self.__running = True
-        elif event == 'error':
+                self.connected_to_alivecode = True
+        elif event == IOT_EVENT.ERROR.value[0]:
             style_print(f"&c[ERROR] {data}")
+        elif event == IOT_EVENT.PING.value[0]:
+            self.__send_event(IOT_EVENT.PONG, None)
         
 
-    def on_error(self, ws, error):
+    def __on_error(self, ws, error):
         style_print(f"&c[ERROR]{error!r}")
         if isinstance(error, ConnectionResetError):
             style_print("&eWARNING: if you didn't see the '&a[CONNECTED]'&e, "
                         "message verify that you are using the right key")
 
-    def on_close(self, ws):
-        self.__running = False
+    def __on_close(self, ws):
+        self.__connected_to_alivecode = False
+        self.__connected = False
         style_print("&l[CLOSED]")
 
-    def on_open(self, ws):
+    def __on_open(self, ws):
         # Register IoTObject on ALIVEcode
-        self.ws.send(json.dumps(
-            {'event': 'connect_object', 'data': {'id': self.__key}}))
+        self.__connected = True
+        self.__send_event(IOT_EVENT.CONNECT_OBJECT, {'id': self.__id})
 
         if self.__main_loop is None:
             self.ws.close()
@@ -302,11 +294,11 @@ class ObjConnecteAlive:
         style_print("&9[CONNECTING]...")
         websocket.enableTrace(enable_trace)
         self.ws = websocket.WebSocketApp(self.__URL,
-                                         on_open=self.on_open,
-                                         on_message=self.on_message,
-                                         on_error=self.on_error,
-                                         on_close=self.on_close)
+                                         on_open=self.__on_open,
+                                         on_message=self.__on_message,
+                                         on_error=self.__on_error,
+                                         on_close=self.__on_close)
         self.ws.run_forever()
 
     def __repr__(self):
-        return f"connection_key: {self.__key}"
+        return f"connection_key: {self.__id}"
