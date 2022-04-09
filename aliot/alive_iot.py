@@ -146,28 +146,27 @@ class ObjConnecteAlive:
                        'fields': fields,
                        })
 
-    def get_doc(self):
-        res = requests.post(f'{self.__API_URL}/iot/aliot/getDoc', { 'objectId': self.__id})
-        if res.status_code == 201:
-            return json.loads(res.text) if res.text else None
-        elif res.status_code == 403:
-            style_print(f"&c[ERROR] while getting the document, request was Forbidden due to permission errors or project missing.")
-        elif res.status_code == 500:
-            style_print(f"&c[ERROR] while getting the document, something went wrong with the ALIVECode's servers, please try again.")
+    def get_doc(self, field: Union[str, None] = None):
+        if field:
+            res = requests.post(f'{self.__API_URL}/iot/aliot/{IOT_EVENT.GET_FIELD.value[0]}', { 'id': self.__id, 'field': field})
+            if res.status_code == 201:
+                return json.loads(res.text) if res.text else None
+            elif res.status_code == 403:
+                style_print(f"&c[ERROR] while getting the field {field}, request was Forbidden due to permission errors or project missing.")
+            elif res.status_code == 500:
+                style_print(f"&c[ERROR] while getting the field {field}, something went wrong with the ALIVECode's servers, please try again.")
+            else:
+                style_print(f"&c[ERROR] while getting the field {field}, please try again. {res.json()}")
         else:
-            style_print(f"&c[ERROR UNKNOWN] while getting the document, please try again.")
-
-
-    def get_field(self, field: str):
-        res = requests.post(f'{self.__API_URL}/iot/aliot/getField', { 'objectId': self.__id, 'field': field})
-        if res.status_code == 201:
-            return json.loads(res.text) if res.text else None
-        elif res.status_code == 403:
-            style_print(f"&c[ERROR] while getting the field {field}, request was Forbidden due to permission errors or project missing.")
-        elif res.status_code == 500:
-            style_print(f"&c[ERROR] while getting the field ${field}, something went wrong with the ALIVECode's servers, please try again.")
-        else:
-            style_print(f"&c[ERROR UNKNOWN] while getting the field {field}, please try again.")
+            res = requests.post(f'{self.__API_URL}/iot/aliot/{IOT_EVENT.GET_DOC.value[0]}', { 'id': self.__id})
+            if res.status_code == 201:
+                return json.loads(res.text) if res.text else None
+            elif res.status_code == 403:
+                style_print(f"&c[ERROR] while getting the document, request was Forbidden due to permission errors or project missing.")
+            elif res.status_code == 500:
+                style_print(f"&c[ERROR] while getting the document, something went wrong with the ALIVECode's servers, please try again.")
+            else:
+                style_print(f"&c[ERROR] while getting the document, please try again. {res.json()}")
 
 
     def send_route(self, routePath: str, data: dict):

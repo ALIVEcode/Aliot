@@ -110,6 +110,6 @@ class IOT_EVENT(Enum):
   #---- Http requests ----#
 
   #* Get the document of a project #
-  GET_DOC = 'getDoc',
+  GET_DOC = 'get_doc',
   #* Get the field of a document of a project #
-  GET_FIELD = 'getField',
+  GET_FIELD = 'get_field',
