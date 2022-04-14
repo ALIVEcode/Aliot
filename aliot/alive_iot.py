@@ -175,6 +175,13 @@ class ObjConnecteAlive:
             'data': data
         })
 
+    def send_action(self, targetId: str, actionId: int, value=""):
+        self.__send_event(IOT_EVENT.SEND_ACTION, {
+            'targetId': targetId,
+            'actionId': actionId,
+            'value': value
+        })
+
     def __send_event(self, event: IOT_EVENT, data: Union[dict, None]):
 
         """
