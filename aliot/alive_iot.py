@@ -83,7 +83,11 @@ class ObjConnecteAlive:
                 if log_reception:
                     print(f"The protocol: {action_id!r} was called with the arguments: "
                           f"{args}")
-                func(*args, **kwargs)
+                res = func(*args, **kwargs)
+                self.__send_event(IOT_EVENT.SEND_ACTION_DONE, {
+                    "actionId": action_id,
+                    "value": res
+                })
 
             self.__protocols[action_id] = wrapper
             return wrapper
