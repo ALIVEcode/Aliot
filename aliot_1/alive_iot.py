@@ -1,7 +1,7 @@
 from typing import Callable, List, Optional, Union
 from threading import Thread
 import json, requests, websocket
-from aliot.aliot.utils import IOT_EVENT, Style
+from aliot_1.utils import IOT_EVENT, Style
 from itertools import chain
 
 style_print = Style.style_print

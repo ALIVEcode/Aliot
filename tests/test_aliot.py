@@ -1,4 +1,4 @@
-from aliot import __version__
+from aliot_1 import __version__
 
 
 def test_version():

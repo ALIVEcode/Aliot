@@ -6,7 +6,7 @@ import schedule
 import json
 import time
 import websocket
-from aliot.aliot.utils import Style
+from aliot_1.aliot.utils import Style
 
 style_print = Style.style_print
 

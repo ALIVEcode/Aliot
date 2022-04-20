@@ -1,12 +1,12 @@
 from setuptools import find_packages, setup
 
 if __name__ == "__main__":
-    setup(name='aliot',
+    setup(name='aliot_1',
           author=['Mathis Laroche', 'Enric Soldevila'],
           version='0.1.0',
           description='python IOT library compatible with the ALIVE ecosystem',
           packages=find_packages(
-              include=['aliot.', 'aliot.*']),
+              include=['aliot_1.', 'aliot_1.*']),
           install_requires=[
               'msgpack',
               'schedule',

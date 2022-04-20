@@ -1,4 +1,4 @@
-from aliot import iot
+from aliot_1 import iot
 
 
 # DEPRECATED
