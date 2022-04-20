@@ -29,7 +29,12 @@ def make_obj(obj_name) -> result:
     try:
         os.makedirs(path, exist_ok=True)
         with open(f"{path}/{obj_name}.py", "w+") as f:
-            f.write("import aliot\n\n")
+            f.write(
+                f"""from aliot.iot import AliotObj
+
+my_obj = AliotObj("{obj_name}")
+"""
+            )
     except FileNotFoundError:
         return None, f"Could not create object script at {path!r}"
 
@@ -46,6 +51,9 @@ def make_obj_config(obj_name: str) -> result:
     except (ValueError, DuplicateSectionError) as e:
         return False, f"Could not update config file: {e!r}"
     except FileNotFoundError:
-        return None, f"Could not find config file at {config_path!r} (try running `aliot init)`"
+        return (
+            None,
+            f"Could not find config file at {config_path!r} (try running `aliot init)`",
+        )
 
     return True, None

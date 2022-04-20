@@ -1,11 +1,13 @@
 import os.path
 from configparser import ConfigParser
 
+from _config.constants import DEFAULT_CONFIG_FILE
+
 __config: ConfigParser | None = None
 __updated = False
 
 
-def config_init(config_file_path: str):
+def config_init(config_file_path: str = DEFAULT_CONFIG_FILE):
     update_config(config_file_path, get_default_config())
 
 
@@ -27,7 +29,7 @@ def update_config(config_file_path: str, config: ConfigParser):
     __updated = True
 
 
-def get_config(config_file_path: str) -> ConfigParser:
+def get_config(config_file_path: str = DEFAULT_CONFIG_FILE) -> ConfigParser:
     if not os.path.exists(config_file_path):
         raise FileNotFoundError("Config file not found")
     global __config, __updated

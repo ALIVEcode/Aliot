@@ -10,6 +10,7 @@ style_print = Style.style_print
 class URLNotDefinedException(Exception):
     """Exception raised when a new ObjConnecte instance is created and __URL is not defined"""
 
+
 class InvalidURLException(Exception):
     """Exception raised when a setting an invalid URL"""
 
@@ -28,7 +29,7 @@ class ObjConnecteAlive:
     @classmethod
     def set_url(cls, url: str):
         cls.__URL = url
-    
+
     @classmethod
     def set_api_url(cls, api_url: str):
         cls.__API_URL = api_url[:-1] if api_url.endswith('/') else api_url
@@ -36,7 +37,8 @@ class ObjConnecteAlive:
     def __new__(cls, *args, **kwargs):
         if not cls.__URL:
             raise URLNotDefinedException(
-                "You must define a URL before creating an ObjConnecte, call ObjConnecte.set_url(url) with your url before creating any instance of that class"
+                "You must define a URL before creating an ObjConnecte, call ObjConnecte.set_url(url) with your url "
+                "before creating any instance of that class"
             )
         return super().__new__(cls)
 
@@ -49,7 +51,7 @@ class ObjConnecteAlive:
         self.__broadcast_listener: Optional[Callable[[dict], None]] = None
         self.__connected_to_alivecode = False
         self.__connected = False
-        self.ws: websocket.WebSocketApp  = None
+        self.ws: websocket.WebSocketApp = None
         self.__main_loop = None
         self.__repeats = 0
         self.__last_freeze = 0
@@ -77,7 +79,7 @@ class ObjConnecteAlive:
         if not value:
             self.ws.close()
 
-    def on_recv(self, action_id: int, log_reception: bool = True,):
+    def on_recv(self, action_id: int, log_reception: bool = True, ):
         def inner(func):
             def wrapper(*args, **kwargs):
                 if log_reception:
@@ -98,6 +100,7 @@ class ObjConnecteAlive:
         def inner(func):
             def wrapper(fields: dict):
                 result = func(fields)
+
             self.__listeners.append({
                 'func': wrapper,
                 'fields': fields
@@ -135,43 +138,47 @@ class ObjConnecteAlive:
 
         return inner
 
-    def update_component(self, id: str,  value):
+    def update_component(self, id: str, value):
         self.__send_event(IOT_EVENT.UPDATE_COMPONENT, {
-                       'id': id, 'value': value
-                       })
+            'id': id, 'value': value
+        })
 
     def broadcast(self, data: dict):
         self.__send_event(IOT_EVENT.SEND_BROADCAST, {
-                       'data': data
-                       })
+            'data': data
+        })
 
-    def update_doc(self,fields: dict):
+    def update_doc(self, fields: dict):
         self.__send_event(IOT_EVENT.UPDATE_DOC, {
-                       'fields': fields,
-                       })
+            'fields': fields,
+        })
 
     def get_doc(self, field: Union[str, None] = None):
         if field:
-            res = requests.post(f'{self.__API_URL}/iot/aliot/{IOT_EVENT.GET_FIELD.value[0]}', { 'id': self.__id, 'field': field})
+            res = requests.post(f'{self.__API_URL}/iot/aliot/{IOT_EVENT.GET_FIELD.value[0]}',
+                                {'id': self.__id, 'field': field})
             if res.status_code == 201:
                 return json.loads(res.text) if res.text else None
             elif res.status_code == 403:
-                style_print(f"&c[ERROR] while getting the field {field}, request was Forbidden due to permission errors or project missing.")
+                style_print(
+                    f"&c[ERROR] while getting the field {field}, request was Forbidden due to permission errors or project missing.")
             elif res.status_code == 500:
-                style_print(f"&c[ERROR] while getting the field {field}, something went wrong with the ALIVECode's servers, please try again.")
+                style_print(
+                    f"&c[ERROR] while getting the field {field}, something went wrong with the ALIVECode's servers, please try again.")
             else:
                 style_print(f"&c[ERROR] while getting the field {field}, please try again. {res.json()}")
         else:
-            res = requests.post(f'{self.__API_URL}/iot/aliot/{IOT_EVENT.GET_DOC.value[0]}', { 'id': self.__id})
+            res = requests.post(f'{self.__API_URL}/iot/aliot/{IOT_EVENT.GET_DOC.value[0]}', {'id': self.__id})
             if res.status_code == 201:
                 return json.loads(res.text) if res.text else None
             elif res.status_code == 403:
-                style_print(f"&c[ERROR] while getting the document, request was Forbidden due to permission errors or project missing.")
+                style_print(
+                    f"&c[ERROR] while getting the document, request was Forbidden due to permission errors or project missing.")
             elif res.status_code == 500:
-                style_print(f"&c[ERROR] while getting the document, something went wrong with the ALIVECode's servers, please try again.")
+                style_print(
+                    f"&c[ERROR] while getting the document, something went wrong with the ALIVECode's servers, please try again.")
             else:
                 style_print(f"&c[ERROR] while getting the document, please try again. {res.json()}")
-
 
     def send_route(self, routePath: str, data: dict):
         self.__send_event(IOT_EVENT.SEND_ROUTE, {
@@ -235,11 +242,9 @@ class ObjConnecteAlive:
             if len(fieldsToReturn) > 0:
                 listener["func"](fieldsToReturn)
 
-
     def __execute_broadcast(self, data: dict):
         if self.broadcast_listener:
             self.broadcast_listener(data)
-
 
     def __on_message(self, ws, message):
         msg = json.loads(message)
@@ -258,14 +263,14 @@ class ObjConnecteAlive:
         elif event == IOT_EVENT.RECEIVE_BROADCAST.value[0]:
             self.__execute_broadcast(data['data'])
         elif event == IOT_EVENT.CONNECT_SUCCESS.value[0]:
-            
+
             if len(self.__listeners) == 0:
                 style_print("&a[CONNECTED]")
                 self.connected_to_alivecode = True
             else:
                 # Register listeners on ALIVEcode
                 fields = sorted(set([field for l in self.listeners for field in l['fields']]))
-                self.__send_event(IOT_EVENT.SUBSCRIBE_LISTENER, { 'fields': fields })
+                self.__send_event(IOT_EVENT.SUBSCRIBE_LISTENER, {'fields': fields})
         elif event == IOT_EVENT.SUBSCRIBE_LISTENER_SUCCESS.value[0]:
             self.__listeners_set += 1
             if self.__listeners_set == len(self.__listeners):
@@ -275,7 +280,6 @@ class ObjConnecteAlive:
             style_print(f"&c[ERROR] {data}")
         elif event == IOT_EVENT.PING.value[0]:
             self.__send_event(IOT_EVENT.PONG, None)
-        
 
     def __on_error(self, ws, error):
         style_print(f"&c[ERROR]{error!r}")
@@ -298,7 +302,6 @@ class ObjConnecteAlive:
             raise NotImplementedError("You must define a main loop")
 
         Thread(target=self.__main_loop, daemon=True).start()
-
 
     def begin(self, enable_trace: bool = False):
         style_print("&9[CONNECTING]...")

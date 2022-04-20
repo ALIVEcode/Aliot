@@ -45,21 +45,19 @@ def new(name: str):
 
 @main.group()
 def check():
-    """ Group of commands to check the status of the aliot """
+    """Group of commands to check the status of the aliot"""
 
-
-@check.command(name="obj")
+@check.command(name="iot")
 @click.option("--name", default=None)
 def objects(name: str):
-    """ Look up all the objects ids in the config.ini and validate them with the server """
-    print_info(f"Checking objects {name!r}")
+    """Look up all (or one) objects' id in the config.ini and validate them with the server"""
     if name is None:
-        """ Validate all the objects """
+        """Validate all the objects"""
     else:
-        """ Validate only the object with the name """
+        """Validate only the object with the name"""
 
 
 @main.command()
 @click.argument("name", default=None)
 def update():
-    """ Update aliot with the latest version """
+    """Update aliot with the latest version"""
