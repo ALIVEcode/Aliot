@@ -14,3 +14,11 @@ def print_err(op_name: str = ""):
 
 def print_fail(op_name: str = ""):
     console.print(f"[Failure (’-_-)] {op_name}", style=Style(color="red"))
+
+
+def print_warning(op_name: str = ""):
+    console.print(f"[Warning (ㆆ_ㆆ)] {op_name}", style=Style(color="yellow"))
+
+
+def print_info(op_name: str = ""):
+    console.print(f"[Info (^ ▽ ^)] {op_name}", style=Style(color="cyan"))

@@ -46,6 +46,6 @@ def make_obj_config(obj_name: str) -> result:
     except (ValueError, DuplicateSectionError) as e:
         return False, f"Could not update config file: {e!r}"
     except FileNotFoundError:
-        return None, f"Could not find config file at {config_path!r}"
+        return None, f"Could not find config file at {config_path!r} (try running `aliot init)`"
 
     return True, None

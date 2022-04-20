@@ -5,7 +5,7 @@ import click
 import _cli.cli_service as service
 from _config.constants import DEFAULT_FOLDER
 
-from _cli.utils import print_success, print_err, print_fail
+from _cli.utils import print_success, print_err, print_fail, print_warning, print_info
 
 
 @click.group()
@@ -27,7 +27,7 @@ def print_result(success_msg: str, success: bool | None, err_msg: str) -> bool |
 @main.command()
 @click.argument("folder", default=DEFAULT_FOLDER)
 def init(folder: str):
-    print_result(f"You aliot project is ready to go!", *service.make_init(folder))
+    print_result(f"Your aliot project is ready to go!", *service.make_init(folder))
 
 
 @main.command()
@@ -41,3 +41,25 @@ def new(name: str):
         return
 
     print_result(f"Object {name!r} created successfully", *service.make_obj(name))
+
+
+@main.group()
+def check():
+    """ Group of commands to check the status of the aliot """
+
+
+@check.command(name="obj")
+@click.option("--name", default=None)
+def objects(name: str):
+    """ Look up all the objects ids in the config.ini and validate them with the server """
+    print_info(f"Checking objects {name!r}")
+    if name is None:
+        """ Validate all the objects """
+    else:
+        """ Validate only the object with the name """
+
+
+@main.command()
+@click.argument("name", default=None)
+def update():
+    """ Update aliot with the latest version """
