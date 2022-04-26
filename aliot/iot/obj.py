@@ -15,11 +15,11 @@ from aliot.iot.constants import IOT_EVENT
 
 class AliotObj:
     def __init__(self, name: str):
-        self.name = name
-        self.encoder = DefaultEncoder()
-        self.decoder = DefaultDecoder()
-        self.config = get_config()
-        self.ws: Optional[WebSocketApp] = None
+        self.__name = name
+        self.__ws: Optional[WebSocketApp] = None
+        self.__encoder = DefaultEncoder()
+        self.__decoder = DefaultDecoder()
+        self.__config = get_config()
         self.__protocols = {}
         self.__listeners = []
         self.__broadcast_listener: Optional[Callable[[dict], None]] = None
@@ -30,16 +30,45 @@ class AliotObj:
         self.__last_freeze = 0
         self.__listeners_set = 0
 
+    # ################################# Public methods ################################# #
+
+    def run(self):
+        self.__ws.run_forever()
+
+    # ################################# Properties methods ################################# #
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def encoder(self):
+        return self.__encoder
+
+    @encoder.setter
+    def encoder(self, encoder: "Encoder"):
+        self.__encoder = encoder
+
+    @property
+    def decoder(self):
+        return self.__decoder
+
+    @decoder.setter
+    def decoder(self, decoder: "Decoder"):
+        self.__decoder = decoder
+
     @property
     def object_id(self):
         return self.__get_config_value("obj_id")
 
     @property
     def protocols(self):
+        """ Returns a copy of the protocols dict """
         return self.__protocols.copy()
 
     @property
     def listeners(self):
+        """ Returns a copy of the listeners list """
         return self.__listeners.copy()
 
     @property
@@ -53,24 +82,17 @@ class AliotObj:
     @connected_to_alivecode.setter
     def connected_to_alivecode(self, value: bool):
         self.__connected_to_alivecode = value
-        if not value:
-            self.ws.close()
+        if not value and self.__connected:
+            self.__ws.close()
+
+    # ################################# Private methods ################################# #
 
     def __get_config_value(self, key):
-        return self.config.get(self.name, key)
-
-    def set_encoder(self, encoder):
-        self.encoder = encoder
-
-    def set_decoder(self, decoder):
-        self.decoder = decoder
-
-    def run(self):
-        self.ws.run_forever()
+        return self.__config.get(self.__name, key)
 
     def __send_event(self, event: IOT_EVENT, data: Optional[dict]):
         if self.__connected:
-            self.ws.send(json.dumps({'event': event.value[0], 'data': data}, default=str))
+            self.__ws.send(self.encoder.encode({'event': event.value[0], 'data': data}))
             self.__repeats += 1
 
     def __execute_listen(self, fields: dict):
@@ -107,7 +129,7 @@ class AliotObj:
             protocol(msg["value"])
 
     def __on_message(self, ws, message):
-        msg = json.loads(message)
+        msg = self.decoder.decode(message)
 
         event: str = msg['event']
         data = msg['data']
@@ -163,32 +185,32 @@ class AliotObj:
         self.__send_event(IOT_EVENT.CONNECT_OBJECT, {'id': self.object_id})
 
         if self.__main_loop is None:
-            self.ws.close()
+            self.__ws.close()
             raise NotImplementedError("You must define a main loop")
 
         Thread(target=self.__main_loop, daemon=True).start()
 
     def __setup_ws(self):
         url = self.__get_config_value("ws_url")
-        self.ws = WebSocketApp(url,
-                               on_open=self.__on_open,
-                               on_message=self.__on_message,
-                               on_error=self.__on_error,
-                               on_close=self.__on_close
-                               )
+        self.__ws = WebSocketApp(url,
+                                 on_open=self.__on_open,
+                                 on_message=self.__on_message,
+                                 on_error=self.__on_error,
+                                 on_close=self.__on_close
+                                 )
 
 
 class Encoder(ABC):
     @abstractmethod
-    def encode(self, value):
-        """ Encode value before sending to server """
+    def encode(self, value) -> str:
+        """ Encode value to a string before sending it to server """
         ...
 
 
 class Decoder(ABC):
     @abstractmethod
-    def decode(self, value):
-        """ Decode value after receiving from server """
+    def decode(self, value: str):
+        """ Decode value from the string sent by the server """
         ...
 
 
@@ -196,13 +218,13 @@ class DefaultEncoder(Encoder):
     def __init__(self):
         pass
 
-    def encode(self, value):
-        return value
+    def encode(self, value) -> str:
+        return json.dumps(value, default=str)
 
 
 class DefaultDecoder(Decoder):
     def __init__(self):
         pass
 
-    def decode(self, value):
-        return value
+    def decode(self, value: str):
+        return json.loads(value)
