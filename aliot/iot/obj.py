@@ -4,7 +4,7 @@
 import json
 from abc import ABC, abstractmethod
 from threading import Thread
-from typing import Optional
+from typing import Optional, Callable
 
 from websocket import WebSocketApp
 
@@ -15,12 +15,46 @@ from aliot.iot.constants import IOT_EVENT
 
 class AliotObj:
     def __init__(self, name: str):
-        self.protocols = None
         self.name = name
         self.encoder = DefaultEncoder()
         self.decoder = DefaultDecoder()
         self.config = get_config()
         self.ws: Optional[WebSocketApp] = None
+        self.__protocols = {}
+        self.__listeners = []
+        self.__broadcast_listener: Optional[Callable[[dict], None]] = None
+        self.__connected_to_alivecode = False
+        self.__connected = False
+        self.__main_loop = None
+        self.__repeats = 0
+        self.__last_freeze = 0
+        self.__listeners_set = 0
+
+    @property
+    def object_id(self):
+        return self.__get_config_value("obj_id")
+
+    @property
+    def protocols(self):
+        return self.__protocols.copy()
+
+    @property
+    def listeners(self):
+        return self.__listeners.copy()
+
+    @property
+    def broadcast_listener(self):
+        return self.__broadcast_listener
+
+    @property
+    def connected_to_alivecode(self):
+        return self.__connected_to_alivecode
+
+    @connected_to_alivecode.setter
+    def connected_to_alivecode(self, value: bool):
+        self.__connected_to_alivecode = value
+        if not value:
+            self.ws.close()
 
     def __get_config_value(self, key):
         return self.config.get(self.name, key)
@@ -33,6 +67,21 @@ class AliotObj:
 
     def run(self):
         self.ws.run_forever()
+
+    def __send_event(self, event: IOT_EVENT, data: Optional[dict]):
+        if self.__connected:
+            self.ws.send(json.dumps({'event': event.value[0], 'data': data}, default=str))
+            self.__repeats += 1
+
+    def __execute_listen(self, fields: dict):
+        for listener in self.listeners:
+            fieldsToReturn = dict(filter(lambda el: el[0] in listener['fields'], fields.items()))
+            if len(fieldsToReturn) > 0:
+                listener["func"](fieldsToReturn)
+
+    def __execute_broadcast(self, data: dict):
+        if self.broadcast_listener:
+            self.broadcast_listener(data)
 
     def __execute_protocol(self, msg: dict | list):
         if isinstance(msg, list):
@@ -111,7 +160,7 @@ class AliotObj:
     def __on_open(self, ws):
         # Register IoTObject on ALIVEcode
         self.__connected = True
-        self.__send_event(IOT_EVENT.CONNECT_OBJECT, {'id': self.__id})
+        self.__send_event(IOT_EVENT.CONNECT_OBJECT, {'id': self.object_id})
 
         if self.__main_loop is None:
             self.ws.close()
