@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Aliotpy.iml" filepath="$PROJECT_DIR$/.idea/Aliotpy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../AliotpyExample/.idea/AliotpyExample.iml" filepath="$PROJECT_DIR$/../AliotpyExample/.idea/AliotpyExample.iml" />
     </modules>
   </component>
 </project>

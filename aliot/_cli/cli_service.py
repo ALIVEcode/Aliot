@@ -33,8 +33,11 @@ def make_obj(obj_name) -> result:
                 f"""from aliot.iot import AliotObj
 
 my_obj = AliotObj("{obj_name}")
-"""
-            )
+
+# write your code here
+
+my_obj.run()
+""")
     except FileNotFoundError:
         return None, f"Could not create object script at {path!r}"
 
