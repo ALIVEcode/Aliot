@@ -1,4 +1,4 @@
-from aliot_1 import alive_iot as iot
+from aliot_old import alive_iot as iot
 
 lumiere = iot.ObjConnecteAlive("ef4228d0-8e4e-4ec6-ab7e-7618d588f94e")
 iot.ObjConnecteAlive.set_url("ws://localhost:8881")

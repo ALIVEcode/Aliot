@@ -6,7 +6,7 @@ import schedule
 import json
 import time
 import websocket
-from aliot_1.aliot.utils import Style
+from aliot_old.utils import Style
 
 style_print = Style.style_print
 
@@ -147,7 +147,7 @@ class ObjConnecte:
             style_print("&eWARNING: if you didn't see the '&a[CONNECTED]'&e, "
                         "message verify that you are using the right key")
 
-    def on_close(self, ws):
+    def on_close(self, ws, *_):
         self.__running = False
         style_print("&l[CLOSED]")
 
