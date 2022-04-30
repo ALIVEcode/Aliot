@@ -1,14 +1,23 @@
 import click
+import requests
 
 import aliot.core._cli.cli_service as service
-from aliot.core._config.constants import DEFAULT_FOLDER
+from aliot.core._config.constants import DEFAULT_FOLDER, CHECK_FOR_UPDATE_URL
 
 from aliot.core._cli.utils import print_success, print_err, print_fail
+import aliot
 
 
 @click.group()
 def main():
-    pass
+    response = requests.get(CHECK_FOR_UPDATE_URL)
+    if response.status_code != 200:
+        return
+    content = response.json()
+    latest_version = content.get("latest", None) or content.get("versions", [None])[-1]
+    if latest_version is None:
+        return
+    # TODO finish the "auto-check for update" system
 
 
 def print_result(success_msg: str, success: bool | None, err_msg: str) -> bool | None:
@@ -29,21 +38,22 @@ def init(folder: str):
 
 
 @main.command()
-@click.argument("name")
+@click.argument("object-name")
 # @click.option("-o", "mode", is_flag=True, help="Specify what you want to make")
-def new(name: str):
+def new(object_name: str):
     success = print_result(
-        f"Object {name!r} config created successfully", *service.make_obj_config(name)
+        f"Object {object_name!r} config created successfully", *service.make_obj_config(object_name)
     )
     if success is None:
         return
 
-    print_result(f"Object {name!r} created successfully", *service.make_obj(name))
+    print_result(f"Object {object_name!r} created successfully", *service.make_obj(object_name))
 
 
 @main.group()
 def check():
     """Group of commands to check the status of the aliot"""
+
 
 @check.command(name="iot")
 @click.option("--name", default=None)
