@@ -9,12 +9,12 @@ if TYPE_CHECKING:
     from encoder import Encoder
     from decoder import Decoder
 
-from threading import Thread
 from typing import Optional, Callable
 
 from websocket import WebSocketApp
+import websocket
 
-from aliot.core._cli.utils import print_success, print_err, print_warning, print_info
+from aliot.core._cli.utils import print_success, print_err, print_warning, print_info, print_log, print_fail
 from aliot.core._config.config import get_config
 from aliot.constants import ALIVE_IOT_EVENT
 from aliot.decoder import DefaultDecoder
@@ -39,6 +39,7 @@ class AliotObj:
         self.__listeners_set = 0
         self.__api_url: str = self.__get_config_value("api_url")
         self.__ws_url: str = self.__get_config_value("ws_url")
+        self.__log = False
 
     # ################################# Properties ################################# #
 
@@ -92,9 +93,9 @@ class AliotObj:
 
     # ################################# Public methods ################################# #
 
-    def run(self):
-        self.__setup_ws()
-        self.__ws.run_forever()
+    def run(self, *, enable_trace: bool = False, log: bool = False):
+        self.__log = log
+        self.__setup_ws(enable_trace)
 
     def on_recv(self, action_id: int, log_reception: bool = True, ):
         def inner(func):
@@ -172,7 +173,7 @@ class AliotObj:
 
     def get_doc(self, field: Optional[str] = None):
         if field:
-            res = requests.post(f'{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.GET_FIELD.value[0]}',
+            res = requests.post(f'{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.GET_FIELD.value}',
                                 {'id': self.object_id, 'field': field})
             match res.status_code:
                 case 201:
@@ -188,7 +189,7 @@ class AliotObj:
                 case _:
                     print_err(f"While getting the field {field}, please try again. {res.json()!r}")
         else:
-            res = requests.post(f'{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.GET_DOC.value[0]}',
+            res = requests.post(f'{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.GET_DOC.value}',
                                 {'id': self.object_id})
             match res.status_code:
                 case 201:
@@ -219,12 +220,20 @@ class AliotObj:
 
     # ################################# Private methods ################################# #
 
+    def __log_info(self, info):
+        if self.__log:
+            print_log(info, color="grey70")
+
     def __get_config_value(self, key):
         return self.__config.get(self.__name, key, fallback=None) or self.__config.defaults().get(key)
 
     def __send_event(self, event: ALIVE_IOT_EVENT, data: Optional[dict]):
         if self.__connected:
-            self.__ws.send(self.encoder.encode({'event': event.value[0], 'data': data}))
+            data_sent = {'event': event.value, 'data': data}
+            data_encoded = self.encoder.encode(data_sent)
+            self.__log_info(f"[Encoding] {data_sent!r}")
+            self.__log_info(f"[Sending] {data_encoded!r}")
+            self.__ws.send(data_encoded)
             self.__repeats += 1
 
     def __execute_listen(self, fields: dict):
@@ -268,66 +277,70 @@ class AliotObj:
         event: str = msg['event']
         data = msg['data']
 
-        match ALIVE_IOT_EVENT.__members__.get(event):
-            case ALIVE_IOT_EVENT.CONNECT_SUCCESS:
+        match event:
+            case ALIVE_IOT_EVENT.CONNECT_SUCCESS.value:
                 if len(self.__listeners) == 0:
-                    print_success("CONNECTED")
+                    print_success(f"Object {self.name!r}", success_name="Connected")
                     self.connected_to_alivecode = True
                 else:
                     # Register listeners on ALIVEcode
                     fields = sorted(set([field for l in self.listeners for field in l['fields']]))
                     self.__send_event(ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER, {'fields': fields})
 
-            case ALIVE_IOT_EVENT.RECEIVE_ACTION:
+            case ALIVE_IOT_EVENT.RECEIVE_ACTION.value:
                 self.__execute_protocol(data)
 
-            case ALIVE_IOT_EVENT.RECEIVE_LISTEN:
+            case ALIVE_IOT_EVENT.RECEIVE_LISTEN.value:
                 self.__execute_listen(data['fields'])
 
-            case ALIVE_IOT_EVENT.RECEIVE_BROADCAST:
+            case ALIVE_IOT_EVENT.RECEIVE_BROADCAST.value:
                 self.__execute_broadcast(data['data'])
 
-            case ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER_SUCCESS:
+            case ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER_SUCCESS.value:
                 self.__listeners_set += 1
                 if self.__listeners_set == len(self.__listeners):
-                    print_success("CONNECTED")
+                    print_success(success_name="Connected")
                     self.connected_to_alivecode = True
 
-            case ALIVE_IOT_EVENT.ERROR:
-                print_err(f"{event=}  {data=}")
+            case ALIVE_IOT_EVENT.ERROR.value:
+                print_err(data)
+                self.connected_to_alivecode = False
+                print_fail(failure_name="Connection closed")
 
-            case ALIVE_IOT_EVENT.PING:
+            case ALIVE_IOT_EVENT.PING.value:
                 self.__send_event(ALIVE_IOT_EVENT.PONG, None)
 
             case None:
                 pass
 
-    def __on_error(self, ws, error):
+    def __on_error(self, ws: WebSocketApp, error):
         print_err(f"{error!r}")
         if isinstance(error, ConnectionResetError):
-            print_warning("If you didn't see the 'CONNECTED', "
+            print_warning("If you didn't see the 'Connected', "
                           "message verify that you are using the right key")
 
     def __on_close(self, ws, *_):
-        self.__connected_to_alivecode = False
         self.__connected = False
-        print_info("Connection CLOSED")
+        self.__connected_to_alivecode = False
+        print_info(info_name="Connection closed")
 
     def __on_open(self, ws):
         # Register IoTObject on ALIVEcode
         self.__connected = True
         self.__send_event(ALIVE_IOT_EVENT.CONNECT_OBJECT, {'id': self.object_id})
+        # if self.__main_loop is None:
+        #     self.__ws.close()
+        #     raise NotImplementedError("You must define a main loop")
 
-        if self.__main_loop is None:
-            self.__ws.close()
-            raise NotImplementedError("You must define a main loop")
+        # Thread(target=self.__main_loop, daemon=True).start()
 
-        Thread(target=self.__main_loop, daemon=True).start()
-
-    def __setup_ws(self):
+    def __setup_ws(self, enable_trace: bool = False):
+        print_info("...", info_name="Connecting")
+        websocket.enableTrace(enable_trace)
         self.__ws = WebSocketApp(self.__ws_url,
                                  on_open=self.__on_open,
                                  on_message=self.__on_message,
                                  on_error=self.__on_error,
                                  on_close=self.__on_close
                                  )
+        self.__ws.run_forever()
