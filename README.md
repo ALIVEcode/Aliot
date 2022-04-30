@@ -1,9 +1,9 @@
-### ALIOT!
+### ALIOT-PY: The python implementation of the Aliot library!
 
 #### What is Aliot?
 
-Before everything else, aliot is a fancy websocket written in python that aims to facilitate iot focused
-exchanges between a server and a client
+Before everything else, aliot is a fancy websocket written in python that aims to facilitate iot focused exchanges
+between a server and a client
 
 #### Installation
 
@@ -26,9 +26,8 @@ exchanges between a server and a client
         return {"cookies": money // 2}
     ```
 
-2. Register your function as a protocol by decorating it with the `on_recv` decorator
-   in your ObjConnecte that you created for your project and pass the id of your protocol in the
-   argument of the decorator
+2. Register your function as a protocol by decorating it with the `on_recv` decorator in your ObjConnecte that you
+   created for your project and pass the id of your protocol in the argument of the decorator
 
     ```py
     # here, I chose that my function will be protocol 34
@@ -37,8 +36,8 @@ exchanges between a server and a client
         return {"cookies": money // 2}
     ```
 
-3. As of now, my function `give_cookies_for_money` doesn't return anything to the server, if I want to
-   send back my cookies, I have to ways:
+3. As of now, my function `give_cookies_for_money` doesn't return anything to the server, if I want to send back my
+   cookies, I have to ways:
 
     1. use the function `my_iot.send()`
 

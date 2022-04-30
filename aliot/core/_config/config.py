@@ -1,7 +1,7 @@
 import os.path
 from configparser import ConfigParser
 
-from _config.constants import DEFAULT_CONFIG_FILE
+from aliot.core._config.constants import DEFAULT_CONFIG_FILE
 
 __config: ConfigParser | None = None
 __updated = False

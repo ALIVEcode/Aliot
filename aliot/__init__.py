@@ -1,1 +1,4 @@
-__all__ = ["iot"]
+"""
+The aliot module
+"""
+__all__ = ["aliot_obj", "decoder", "encoder"]

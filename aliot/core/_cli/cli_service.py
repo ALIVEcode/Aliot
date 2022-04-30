@@ -1,9 +1,9 @@
 import os.path
-from configparser import ConfigParser, DuplicateSectionError
+from configparser import DuplicateSectionError
 from typing import TypeAlias
 
-from _config.constants import CONFIG_FILE_NAME, DEFAULT_FOLDER
-from _config.config import update_config, config_init, get_config
+from aliot.core._config.constants import CONFIG_FILE_NAME, DEFAULT_FOLDER
+from aliot.core._config.config import update_config, config_init, get_config
 
 result: TypeAlias = tuple[bool | None, str | None]
 
@@ -21,22 +21,22 @@ def make_init(folder: str) -> result:
     return True, None
 
 
-def make_obj(obj_name) -> result:
+def make_obj(obj_name: str) -> result:
     path = f"{DEFAULT_FOLDER}/{obj_name}"
     if os.path.exists(path):
         return False, "Object already exists"
-
+    variable = obj_name.replace('-', '_')
     try:
         os.makedirs(path, exist_ok=True)
         with open(f"{path}/{obj_name}.py", "w+") as f:
             f.write(
-                f"""from aliot.iot import AliotObj
+                f"""from aliot.aliot_obj import AliotObj
 
-my_obj = AliotObj("{obj_name}")
+{variable} = AliotObj("{obj_name}")
 
 # write your code here
 
-my_obj.run()
+{variable}.run()
 """)
     except FileNotFoundError:
         return None, f"Could not create object script at {path!r}"

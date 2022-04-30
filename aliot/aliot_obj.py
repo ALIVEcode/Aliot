@@ -1,16 +1,20 @@
-"""
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
-"""
-import json
-from abc import ABC, abstractmethod
+if TYPE_CHECKING:
+    from encoder import Encoder
+    from decoder import Decoder
+
 from threading import Thread
 from typing import Optional, Callable
 
 from websocket import WebSocketApp
 
-from aliot._cli.utils import print_success, print_err, print_warning, print_info
-from aliot._config.config import get_config
-from aliot.iot.constants import IOT_EVENT
+from aliot.core._cli.utils import print_success, print_err, print_warning, print_info
+from aliot.core._config.config import get_config
+from aliot.constants import ALIVE_IOT_EVENT
+from aliot.decoder import DefaultDecoder
+from aliot.encoder import DefaultEncoder
 
 
 class AliotObj:
@@ -42,19 +46,19 @@ class AliotObj:
         return self.__name
 
     @property
-    def encoder(self):
+    def encoder(self) -> Encoder:
         return self.__encoder
 
     @encoder.setter
-    def encoder(self, encoder: "Encoder"):
+    def encoder(self, encoder: Encoder):
         self.__encoder = encoder
 
     @property
-    def decoder(self):
+    def decoder(self) -> Decoder:
         return self.__decoder
 
     @decoder.setter
-    def decoder(self, decoder: "Decoder"):
+    def decoder(self, decoder: Decoder):
         self.__decoder = decoder
 
     @property
@@ -90,7 +94,7 @@ class AliotObj:
     def __get_config_value(self, key):
         return self.__config.get(self.__name, key)
 
-    def __send_event(self, event: IOT_EVENT, data: Optional[dict]):
+    def __send_event(self, event: ALIVE_IOT_EVENT, data: Optional[dict]):
         if self.__connected:
             self.__ws.send(self.encoder.encode({'event': event.value[0], 'data': data}))
             self.__repeats += 1
@@ -128,42 +132,44 @@ class AliotObj:
         else:
             protocol(msg["value"])
 
+    # ################################# Websocket methods ################################# #
+
     def __on_message(self, ws, message):
         msg = self.decoder.decode(message)
 
         event: str = msg['event']
         data = msg['data']
 
-        match IOT_EVENT.__members__.get(event):
-            case IOT_EVENT.CONNECT_SUCCESS:
+        match ALIVE_IOT_EVENT.__members__.get(event):
+            case ALIVE_IOT_EVENT.CONNECT_SUCCESS:
                 if len(self.__listeners) == 0:
                     print_success("CONNECTED")
                     self.connected_to_alivecode = True
                 else:
                     # Register listeners on ALIVEcode
                     fields = sorted(set([field for l in self.listeners for field in l['fields']]))
-                    self.__send_event(IOT_EVENT.SUBSCRIBE_LISTENER, {'fields': fields})
+                    self.__send_event(ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER, {'fields': fields})
 
-            case IOT_EVENT.RECEIVE_ACTION:
+            case ALIVE_IOT_EVENT.RECEIVE_ACTION:
                 self.__execute_protocol(data)
 
-            case IOT_EVENT.RECEIVE_LISTEN:
+            case ALIVE_IOT_EVENT.RECEIVE_LISTEN:
                 self.__execute_listen(data['fields'])
 
-            case IOT_EVENT.RECEIVE_BROADCAST:
+            case ALIVE_IOT_EVENT.RECEIVE_BROADCAST:
                 self.__execute_broadcast(data['data'])
 
-            case IOT_EVENT.SUBSCRIBE_LISTENER_SUCCESS:
+            case ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER_SUCCESS:
                 self.__listeners_set += 1
                 if self.__listeners_set == len(self.__listeners):
                     print_success("CONNECTED")
                     self.connected_to_alivecode = True
 
-            case IOT_EVENT.ERROR:
+            case ALIVE_IOT_EVENT.ERROR:
                 print_err(data)
 
-            case IOT_EVENT.PING:
-                self.__send_event(IOT_EVENT.PONG, None)
+            case ALIVE_IOT_EVENT.PING:
+                self.__send_event(ALIVE_IOT_EVENT.PONG, None)
 
             case None:
                 pass
@@ -182,7 +188,7 @@ class AliotObj:
     def __on_open(self, ws):
         # Register IoTObject on ALIVEcode
         self.__connected = True
-        self.__send_event(IOT_EVENT.CONNECT_OBJECT, {'id': self.object_id})
+        self.__send_event(ALIVE_IOT_EVENT.CONNECT_OBJECT, {'id': self.object_id})
 
         if self.__main_loop is None:
             self.__ws.close()
@@ -198,33 +204,3 @@ class AliotObj:
                                  on_error=self.__on_error,
                                  on_close=self.__on_close
                                  )
-
-
-class Encoder(ABC):
-    @abstractmethod
-    def encode(self, value) -> str:
-        """ Encode value to a string before sending it to server """
-        ...
-
-
-class Decoder(ABC):
-    @abstractmethod
-    def decode(self, value: str):
-        """ Decode value from the string sent by the server """
-        ...
-
-
-class DefaultEncoder(Encoder):
-    def __init__(self):
-        pass
-
-    def encode(self, value) -> str:
-        return json.dumps(value, default=str)
-
-
-class DefaultDecoder(Decoder):
-    def __init__(self):
-        pass
-
-    def decode(self, value: str):
-        return json.loads(value)

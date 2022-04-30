@@ -1,11 +1,9 @@
-from typing import Literal
-
 import click
 
-import _cli.cli_service as service
-from _config.constants import DEFAULT_FOLDER
+import aliot.core._cli.cli_service as service
+from aliot.core._config.constants import DEFAULT_FOLDER
 
-from _cli.utils import print_success, print_err, print_fail, print_warning, print_info
+from aliot.core._cli.utils import print_success, print_err, print_fail
 
 
 @click.group()

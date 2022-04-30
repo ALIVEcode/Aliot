@@ -1,8 +1,6 @@
 from typing import Union
 
-import msgpack
 from threading import Thread
-import schedule
 import json
 import time
 import websocket

@@ -1,12 +1,12 @@
 from enum import Enum
 
 
-class IOT_EVENT(Enum):
+class ALIVE_IOT_EVENT(Enum):
     # ---------- Connection events ----------#
 
     # * Connect as watcher (web view) #
     CONNECT_WATCHER = ("connect_watcher",)
-    # * Connect as IoTObject (arduino, raspberrpi, etc.) #
+    # * Connect as IoTObject (arduino, RaspberryPi, etc.) #
     CONNECT_OBJECT = ("connect_object",)
     # * Connect IoTObject to a project #
     CONNECT_PROJECT = ("connect_project",)
