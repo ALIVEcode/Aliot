@@ -1,4 +1,5 @@
 import json
+import sys
 
 import click
 import requests
@@ -38,7 +39,7 @@ def print_result(success_msg: str, success: bool | None, err_msg: str) -> bool |
 
 
 @main.command()
-@click.argument("folder", default=DEFAULT_FOLDER)
+@click.argument("folder", default=".")
 def init(folder: str):
     print_result(f"Your aliot project is ready to go!", *service.make_init(folder))
 
@@ -67,7 +68,7 @@ def run(object_name: str):
         print_err(f"The object {object_name!r} doesn't exist. Make sure you wrote it correctly or create it using the"
                   f" `aliot new` command.")
 
-    Popen(["python", obj_path]).communicate()
+    Popen([sys.executable, obj_path]).communicate()
 
 
 @main.group()

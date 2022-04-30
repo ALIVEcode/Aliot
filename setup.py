@@ -27,10 +27,11 @@ if __name__ == "__main__":
               include=['aliot', 'aliot.*']),
           include_package_data=True,
           python_requires=">=3.10",
-          install_requires=["websocket-client",
-                            "rich",
-                            "click",
-                            "requests"
+          install_requires=["websocket-client~=1.3.2",
+                            "rich~=12.3.0",
+                            "click~=8.1.3",
+                            "requests~=2.27.1",
+                            "setuptools==62.1.0"
                             ],
           setup_requires="setuptools",
           entry_points={
