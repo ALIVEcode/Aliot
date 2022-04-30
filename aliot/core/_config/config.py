@@ -35,6 +35,8 @@ def get_config(config_file_path: str = DEFAULT_CONFIG_FILE) -> ConfigParser:
     global __config, __updated
     if __config is None or __updated:
         __config = ConfigParser()
-        __config.read(config_file_path)
+        success = __config.read(config_file_path) != []
+        if not success:
+            raise IOError(f"Cannot read {config_file_path}")
         __updated = False
     return __config

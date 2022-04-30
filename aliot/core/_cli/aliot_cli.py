@@ -1,11 +1,14 @@
+import json
+
 import click
 import requests
+from subprocess import Popen
+import os
 
 import aliot.core._cli.cli_service as service
-from aliot.core._config.constants import DEFAULT_FOLDER, CHECK_FOR_UPDATE_URL
+from aliot.core._config.constants import DEFAULT_FOLDER, CHECK_FOR_UPDATE_URL, CONFIG_FILE_NAME
 
 from aliot.core._cli.utils import print_success, print_err, print_fail
-import aliot
 
 
 @click.group()
@@ -13,7 +16,10 @@ def main():
     response = requests.get(CHECK_FOR_UPDATE_URL)
     if response.status_code != 200:
         return
-    content = response.json()
+    try:
+        content = response.json()
+    except json.JSONDecodeError:
+        return
     latest_version = content.get("latest", None) or content.get("versions", [None])[-1]
     if latest_version is None:
         return
@@ -48,6 +54,20 @@ def new(object_name: str):
         return
 
     print_result(f"Object {object_name!r} created successfully", *service.make_obj(object_name))
+
+
+@main.command()
+@click.argument("object-name")
+def run(object_name: str):
+    if not os.path.exists(f"{DEFAULT_FOLDER}/{CONFIG_FILE_NAME}"):
+        print_err(f"Could not find config file at '{DEFAULT_FOLDER}/{CONFIG_FILE_NAME}' (try running `aliot init`)")
+
+    obj_path = f"{DEFAULT_FOLDER}/{object_name}/{object_name}.py"
+    if not os.path.exists(obj_path):
+        print_err(f"The object {object_name!r} doesn't exist. Make sure you wrote it correctly or create it using the"
+                  f" `aliot new` command.")
+
+    Popen(["python", obj_path]).communicate()
 
 
 @main.group()

@@ -24,7 +24,7 @@ if __name__ == "__main__":
           ],
           url="https://github.com/ALIVEcode/aliot.git",
           packages=find_packages(
-              include=['aliot.', 'aliot.*']),
+              include=['aliot', 'aliot.*']),
           include_package_data=True,
           python_requires=">=3.10",
           install_requires=["websocket-client",
