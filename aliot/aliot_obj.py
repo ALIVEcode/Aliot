@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+from functools import wraps
 from threading import Thread
 from typing import TYPE_CHECKING
 
 import requests
 
-from aliot_document import AliotDocument
+from aliot.aliot_document import AliotDocument
+from aliot.exceptions.should_not_call_error import ShouldNotCallError
 
 if TYPE_CHECKING:
     from encoder import Encoder
@@ -22,6 +24,8 @@ from aliot.core._config.config import get_config
 from aliot.constants import ALIVE_IOT_EVENT
 from aliot.decoder import DefaultDecoder
 from aliot.encoder import DefaultEncoder
+
+_no_value = object()
 
 
 class AliotObj:
@@ -171,17 +175,40 @@ class AliotObj:
 
     # ################################# Decorators methods ################################# #
 
-    def on_start(self, func: Callable, *args, **kwargs):
-        if self.__on_start is not None:
-            raise ValueError(f"A function is already assigned to that role: {self.__on_start[0].__name__}")
-        self.__on_start = (func, args, kwargs)
+    def on_start(self, *args, **kwargs):
+        if kwargs is _no_value:
+            kwargs = {}
+        if args is _no_value:
+            args = ()
 
-    def on_end(self, func: Callable, *args, **kwargs):
-        if self.__on_end is not None:
-            raise ValueError(f"A function is already assigned to that role: {self.__on_end[0].__name__}")
-        self.__on_end = (func, args, kwargs)
+        def inner(f):
+            if self.__on_start is not None:
+                raise ValueError(f"A function is already assigned to that role: {self.__on_start[0].__name__}")
 
-    def on_recv(self, action_id: int, log_reception: bool = True, ):
+            self.__on_start = (f, args, kwargs)
+            return _wrap_do_not_call_error(f"You should not call {f.__name__!r} Yourself. "
+                                           f"Aliot will take care of it and will automatically call it when "
+                                           f"the websocket connection is opened.")
+
+        return inner
+
+    def on_end(self, *args, **kwargs):
+        if kwargs is _no_value:
+            kwargs = {}
+        if args is _no_value:
+            args = ()
+
+        def inner(f):
+            if self.__on_end is not None:
+                raise ValueError(f"A function is already assigned to that role: {self.__on_end[0].__name__}")
+            self.__on_end = (f, args, kwargs)
+            return _wrap_do_not_call_error(f"You should not call {f.__name__!r} Yourself. "
+                                           f"Aliot will take care of it and will automatically call it when "
+                                           f"the websocket connection is over.")
+
+        return inner
+
+    def on_recv(self, action_id: int, log_reception: bool = True):
         def inner(func):
             def wrapper(*args, **kwargs):
                 if log_reception:
@@ -200,6 +227,7 @@ class AliotObj:
 
     def listen(self, fields: list[str]):
         def inner(func):
+            @wraps(func)
             def wrapper(fields: dict):
                 result = func(fields)
 
@@ -213,6 +241,7 @@ class AliotObj:
 
     def listen_broadcast(self):
         def inner(func):
+            @wraps(func)
             def wrapper(fields: dict):
                 result = func(fields)
 
@@ -223,6 +252,7 @@ class AliotObj:
 
     def main_loop(self, repetitions=None):
         def inner(main_loop_func):
+            @wraps(main_loop_func)
             def wrapper():
                 while not self.connected_to_alivecode:
                     pass
@@ -370,3 +400,11 @@ class AliotObj:
                                  on_close=self.__on_close
                                  )
         self.__ws.run_forever()
+
+
+def _wrap_do_not_call_error(msg: str):
+    return lambda *a, **k: _do_not_call_error(msg)
+
+
+def _do_not_call_error(msg: str):
+    raise ShouldNotCallError(msg)
