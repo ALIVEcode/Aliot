@@ -1,10 +1,11 @@
 import json
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class Decoder(ABC):
     @abstractmethod
-    def decode(self, value: str):
+    def decode(self, value: str) -> Any:
         """ Decode value from the string sent by the server """
         ...
 

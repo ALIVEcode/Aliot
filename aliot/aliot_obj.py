@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 
 import requests
 
+from aliot_document import AliotDocument
+
 if TYPE_CHECKING:
     from encoder import Encoder
     from decoder import Decoder
@@ -40,6 +42,7 @@ class AliotObj:
         self.__api_url: str = self.__get_config_value("api_url")
         self.__ws_url: str = self.__get_config_value("ws_url")
         self.__log = False
+        self.__document_manager = AliotDocument()
 
     # ################################# Properties ################################# #
 
@@ -96,6 +99,75 @@ class AliotObj:
     def run(self, *, enable_trace: bool = False, log: bool = False):
         self.__log = log
         self.__setup_ws(enable_trace)
+
+    def keep_document_live(self, keep_doc_live: bool = True, /):
+        """ Maybe do, maybe don't? """
+        # TODO add or delete a listener on the whole document and keep a local version up to date with it
+        pass
+
+    def update_component(self, id: str, value):
+        self.__send_event(ALIVE_IOT_EVENT.UPDATE_COMPONENT, {
+            'id': id, 'value': value
+        })
+
+    def broadcast(self, data: dict):
+        self.__send_event(ALIVE_IOT_EVENT.SEND_BROADCAST, {
+            'data': data
+        })
+
+    def update_doc(self, fields: dict):
+        self.__send_event(ALIVE_IOT_EVENT.UPDATE_DOC, {
+            'fields': fields,
+        })
+
+    def get_doc(self, field: Optional[str] = None):
+        if field:
+            res = requests.post(f'{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.GET_FIELD.value}',
+                                {'id': self.object_id, 'field': field})
+            match res.status_code:
+                case 201:
+                    return json.loads(res.text) if res.text else None
+                case 403:
+                    print_err(
+                        f"While getting the field {field}, "
+                        f"request was Forbidden due to permission errors or project missing.")
+                case 500:
+                    print_err(
+                        f"While getting the field {field}, "
+                        f"something went wrong with the ALIVEcode's servers, please try again.")
+                case _:
+                    print_err(f"While getting the field {field}, please try again. {res.json()!r}")
+        else:
+            res = requests.post(f'{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.GET_DOC.value}',
+                                {'id': self.object_id})
+            match res.status_code:
+                case 201:
+                    return json.loads(res.text) if res.text else None
+                case 403:
+                    print_err(
+                        f"While getting the document, request was Forbidden due "
+                        f"to permission errors or project missing.")
+                case 500:
+                    print_err(
+                        f"While getting the document, something went wrong with the ALIVEcode's servers, "
+                        f"please try again.")
+                case _:
+                    print_err(f"While getting the document, please try again. {res.json()}")
+
+    def send_route(self, routePath: str, data: dict):
+        self.__send_event(ALIVE_IOT_EVENT.SEND_ROUTE, {
+            'routePath': routePath,
+            'data': data
+        })
+
+    def send_action(self, targetId: str, actionId: int, value=""):
+        self.__send_event(ALIVE_IOT_EVENT.SEND_ACTION, {
+            'targetId': targetId,
+            'actionId': actionId,
+            'value': value
+        })
+
+    # ################################# Decorators methods ################################# #
 
     def on_recv(self, action_id: int, log_reception: bool = True, ):
         def inner(func):
@@ -156,68 +228,6 @@ class AliotObj:
 
         return inner
 
-    def update_component(self, id: str, value):
-        self.__send_event(ALIVE_IOT_EVENT.UPDATE_COMPONENT, {
-            'id': id, 'value': value
-        })
-
-    def broadcast(self, data: dict):
-        self.__send_event(ALIVE_IOT_EVENT.SEND_BROADCAST, {
-            'data': data
-        })
-
-    def update_doc(self, fields: dict):
-        self.__send_event(ALIVE_IOT_EVENT.UPDATE_DOC, {
-            'fields': fields,
-        })
-
-    def get_doc(self, field: Optional[str] = None):
-        if field:
-            res = requests.post(f'{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.GET_FIELD.value}',
-                                {'id': self.object_id, 'field': field})
-            match res.status_code:
-                case 201:
-                    return json.loads(res.text) if res.text else None
-                case 403:
-                    print_err(
-                        f"While getting the field {field}, "
-                        f"request was Forbidden due to permission errors or project missing.")
-                case 500:
-                    print_err(
-                        f"While getting the field {field}, "
-                        f"something went wrong with the ALIVEcode's servers, please try again.")
-                case _:
-                    print_err(f"While getting the field {field}, please try again. {res.json()!r}")
-        else:
-            res = requests.post(f'{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.GET_DOC.value}',
-                                {'id': self.object_id})
-            match res.status_code:
-                case 201:
-                    return json.loads(res.text) if res.text else None
-                case 403:
-                    print_err(
-                        f"While getting the document, request was Forbidden due "
-                        f"to permission errors or project missing.")
-                case 500:
-                    print_err(
-                        f"While getting the document, something went wrong with the ALIVEcode's servers, "
-                        f"please try again.")
-                case _:
-                    print_err(f"&c[ERROR] while getting the document, please try again. {res.json()}")
-
-    def send_route(self, routePath: str, data: dict):
-        self.__send_event(ALIVE_IOT_EVENT.SEND_ROUTE, {
-            'routePath': routePath,
-            'data': data
-        })
-
-    def send_action(self, targetId: str, actionId: int, value=""):
-        self.__send_event(ALIVE_IOT_EVENT.SEND_ACTION, {
-            'targetId': targetId,
-            'actionId': actionId,
-            'value': value
-        })
-
     # ################################# Private methods ################################# #
 
     def __log_info(self, info):
@@ -238,9 +248,9 @@ class AliotObj:
 
     def __execute_listen(self, fields: dict):
         for listener in self.listeners:
-            fieldsToReturn = dict(filter(lambda el: el[0] in listener['fields'], fields.items()))
-            if len(fieldsToReturn) > 0:
-                listener["func"](fieldsToReturn)
+            fields_to_return = dict(filter(lambda el: el[0] in listener['fields'], fields.items()))
+            if len(fields_to_return) > 0:
+                listener["func"](fields_to_return)
 
     def __execute_broadcast(self, data: dict):
         if self.broadcast_listener:
