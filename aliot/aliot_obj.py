@@ -386,7 +386,7 @@ class AliotObj:
         #     raise NotImplementedError("You must define a main loop")
 
         self.__on_start and Thread(target=self.__on_start[0], args=self.__on_start[1], kwargs=self.__on_start[2],
-                                   daemon=True)
+                                   daemon=True).start()
 
         # Thread(target=self.__main_loop, daemon=True).start()
 
