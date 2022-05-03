@@ -173,12 +173,12 @@ class AliotObj:
 
     def on_start(self, func: Callable, *args, **kwargs):
         if self.__on_start is not None:
-            raise ValueError(f"A function is already assigned to that role: {self.__on_start.__name__}")
+            raise ValueError(f"A function is already assigned to that role: {self.__on_start[0].__name__}")
         self.__on_start = (func, args, kwargs)
 
     def on_end(self, func: Callable, *args, **kwargs):
         if self.__on_end is not None:
-            raise ValueError(f"A function is already assigned to that role: {self.__on_start.__name__}")
+            raise ValueError(f"A function is already assigned to that role: {self.__on_end[0].__name__}")
         self.__on_end = (func, args, kwargs)
 
     def on_recv(self, action_id: int, log_reception: bool = True, ):
