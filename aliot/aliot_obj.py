@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from threading import Thread
 from typing import TYPE_CHECKING
 
 import requests
@@ -35,7 +36,8 @@ class AliotObj:
         self.__broadcast_listener: Optional[Callable[[dict], None]] = None
         self.__connected_to_alivecode = False
         self.__connected = False
-        self.__main_loop = None
+        self.__on_start: Optional[tuple[Callable, tuple, dict]] = None
+        self.__on_end: Optional[tuple[Callable, tuple, dict]] = None
         self.__repeats = 0
         self.__last_freeze = 0
         self.__listeners_set = 0
@@ -169,6 +171,16 @@ class AliotObj:
 
     # ################################# Decorators methods ################################# #
 
+    def on_start(self, func: Callable, *args, **kwargs):
+        if self.__on_start is not None:
+            raise ValueError(f"A function is already assigned to that role: {self.__on_start.__name__}")
+        self.__on_start = (func, args, kwargs)
+
+    def on_end(self, func: Callable, *args, **kwargs):
+        if self.__on_end is not None:
+            raise ValueError(f"A function is already assigned to that role: {self.__on_start.__name__}")
+        self.__on_end = (func, args, kwargs)
+
     def on_recv(self, action_id: int, log_reception: bool = True, ):
         def inner(func):
             def wrapper(*args, **kwargs):
@@ -223,7 +235,7 @@ class AliotObj:
                     while self.connected_to_alivecode:
                         main_loop_func()
 
-            self.__main_loop = wrapper
+            self.__on_start = wrapper
             return wrapper
 
         return inner
@@ -333,6 +345,7 @@ class AliotObj:
         self.__connected = False
         self.__connected_to_alivecode = False
         print_info(info_name="Connection closed")
+        self.__on_end and self.__on_end[0](*self.__on_end[1], **self.__on_end[2])
 
     def __on_open(self, ws):
         # Register IoTObject on ALIVEcode
@@ -341,6 +354,9 @@ class AliotObj:
         # if self.__main_loop is None:
         #     self.__ws.close()
         #     raise NotImplementedError("You must define a main loop")
+
+        self.__on_start and Thread(target=self.__on_start[0], args=self.__on_start[1], kwargs=self.__on_start[2],
+                                   daemon=True)
 
         # Thread(target=self.__main_loop, daemon=True).start()
 
