@@ -56,3 +56,18 @@ between a server and a client
     ```
 
     3. You're all set! Now repeat and enjoy! 🎉
+
+#### Order of execution (once `run()` is called)
+
+1. obj.on_start()
+
+* On receive:
+    1. [ interceptor.intercept_recv() ]
+    2. decoder.decode_event(event: dict) -> AliotEvent
+    3. controller.handle_event(event: AliotEvent) -> None
+    4. decoder.decode_data<T>(data: dict) -> T
+* On send:
+    1. encoder.encode_data(data: Any) -> dict
+    2. encode.encode_event()
+    3. obj.__send_event() -> None
+

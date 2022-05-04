@@ -6,6 +6,7 @@ CONFIG_FILE_NAME = "config.ini"
 
 def __determine_default_folder() -> bool:
     current = Path(path.abspath("."))  # get current path
+    print(current)
     if (current / CONFIG_FILE_NAME).exists():  # checks if the folder contains the config file
         return True
     return False
@@ -13,5 +14,5 @@ def __determine_default_folder() -> bool:
 
 DEFAULT_FOLDER = "." if __determine_default_folder() else ".."
 
-DEFAULT_CONFIG_FILE = path.join(DEFAULT_FOLDER, CONFIG_FILE_NAME)
+DEFAULT_CONFIG_FILE_PATH = path.join(DEFAULT_FOLDER, CONFIG_FILE_NAME)
 CHECK_FOR_UPDATE_URL = "https://alivecode.ca/aliot/py/versions"

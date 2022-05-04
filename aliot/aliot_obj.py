@@ -357,7 +357,7 @@ class AliotObj:
             case ALIVE_IOT_EVENT.ERROR.value:
                 print_err(data)
                 self.connected_to_alivecode = False
-                print_fail(failure_name="Connection closed")
+                print_fail(failure_name="Connection closed due to an error")
 
             case ALIVE_IOT_EVENT.PING.value:
                 self.__send_event(ALIVE_IOT_EVENT.PONG, None)

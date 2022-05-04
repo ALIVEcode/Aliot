@@ -7,24 +7,26 @@ from subprocess import Popen
 import os
 
 import aliot.core._cli.cli_service as service
-from aliot.core._config.constants import DEFAULT_FOLDER, CHECK_FOR_UPDATE_URL, CONFIG_FILE_NAME
+from aliot.core._config.constants import DEFAULT_FOLDER, CHECK_FOR_UPDATE_URL, CONFIG_FILE_NAME, \
+    DEFAULT_CONFIG_FILE_PATH
 
 from aliot.core._cli.utils import print_success, print_err, print_fail
 
 
 @click.group()
 def main():
-    response = requests.get(CHECK_FOR_UPDATE_URL)
-    if response.status_code != 200:
-        return
-    try:
-        content = response.json()
-    except json.JSONDecodeError:
-        return
-    latest_version = content.get("latest", None) or content.get("versions", [None])[-1]
-    if latest_version is None:
-        return
+    # response = requests.get(CHECK_FOR_UPDATE_URL)
+    # if response.status_code != 200:
+    #     return
+    # try:
+    #     content = response.json()
+    # except json.JSONDecodeError:
+    #     return
+    # latest_version = content.get("latest", None) or content.get("versions", [None])[-1]
+    # if latest_version is None:
+    #     return
     # TODO finish the "auto-check for update" system
+    pass
 
 
 def print_result(success_msg: str, success: bool | None, err_msg: str) -> bool | None:
@@ -60,13 +62,28 @@ def new(object_name: str):
 @main.command()
 @click.argument("object-name")
 def run(object_name: str):
-    if not os.path.exists(f"{DEFAULT_FOLDER}/{CONFIG_FILE_NAME}"):
-        print_err(f"Could not find config file at '{DEFAULT_FOLDER}/{CONFIG_FILE_NAME}' (try running `aliot init`)")
+    if not os.path.exists(DEFAULT_CONFIG_FILE_PATH):
+        print_err(f"Could not find config file at {DEFAULT_CONFIG_FILE_PATH!r} (try running `aliot init`)")
 
-    obj_path = f"{DEFAULT_FOLDER}/{object_name}/{object_name}.py"
+    obj_main = service.get_config(DEFAULT_CONFIG_FILE_PATH).get(object_name, "main",
+                                                                fallback=f"{object_name}.py")
+    obj_dir_path = f"{DEFAULT_FOLDER}/{object_name}"
+
+    if not os.path.exists(obj_dir_path):
+        print_err(
+            f"The object {object_name!r} doesn't exist (at path {obj_dir_path!r}). "
+            f"Make sure you wrote it correctly or create it using the"
+            f" `aliot new` command."
+        )
+
+    obj_path = f"{obj_dir_path}/{obj_main}"
+
     if not os.path.exists(obj_path):
-        print_err(f"The object {object_name!r} doesn't exist. Make sure you wrote it correctly or create it using the"
-                  f" `aliot new` command.")
+        print_err(
+            f"The main file of the object {object_name!r} doesn't exist (at path {obj_path!r}). "
+            f"In your {CONFIG_FILE_NAME!r} file, you specified the main as {obj_main!r}. Make sure to create it "
+            f"or change the value of the field in the {CONFIG_FILE_NAME!r} file to suit your needs."
+        )
 
     Popen([sys.executable, obj_path]).communicate()
 
