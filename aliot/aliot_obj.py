@@ -186,9 +186,11 @@ class AliotObj:
                 raise ValueError(f"A function is already assigned to that role: {self.__on_start[0].__name__}")
 
             self.__on_start = (f, args, kwargs)
-            return _wrap_do_not_call_error(f"You should not call {f.__name__!r} Yourself. "
-                                           f"Aliot will take care of it and will automatically call it when "
-                                           f"the websocket connection is opened.")
+            print_err(f"You should not call the function {f.__name__!r} yourself. "
+                      f"Aliot will take care of it and will "
+                      f"automatically call {f.__name__!r} when your object is connected to the website.",
+                      ShouldNotCallError.__name__)
+            exit(-1)
 
         return inner
 
@@ -202,9 +204,11 @@ class AliotObj:
             if self.__on_end is not None:
                 raise ValueError(f"A function is already assigned to that role: {self.__on_end[0].__name__}")
             self.__on_end = (f, args, kwargs)
-            return _wrap_do_not_call_error(f"You should not call {f.__name__!r} Yourself. "
-                                           f"Aliot will take care of it and will automatically call it when "
-                                           f"the websocket connection is over.")
+            print_err(f"You should not call the function {f.__name__!r} yourself. "
+                      f"Aliot will take care of it and will "
+                      f"automatically call {f.__name__!r} when your object is disconnected to the website.",
+                      ShouldNotCallError.__name__)
+            exit(-1)
 
         return inner
 
@@ -400,11 +404,3 @@ class AliotObj:
                                  on_close=self.__on_close
                                  )
         self.__ws.run_forever()
-
-
-def _wrap_do_not_call_error(msg: str):
-    return lambda *a, **k: _do_not_call_error(msg)
-
-
-def _do_not_call_error(msg: str):
-    raise ShouldNotCallError(msg)

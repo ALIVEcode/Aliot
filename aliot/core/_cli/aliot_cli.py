@@ -50,6 +50,8 @@ def init(folder: str):
 @click.argument("object-name")
 # @click.option("-o", "mode", is_flag=True, help="Specify what you want to make")
 def new(object_name: str):
+    # TODO add --main to change the main value in the config.ini
+    # TODO add --obj-id to change the value of the obj_id in the config.ini
     success = print_result(
         f"Object {object_name!r} config created successfully", *service.make_obj_config(object_name)
     )
