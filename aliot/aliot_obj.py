@@ -294,7 +294,7 @@ class AliotObj:
 
     def __execute_listen(self, fields: dict):
         for listener in self.listeners:
-            fields_to_return = dict(filter(lambda el: el[0] in listener['fields'], fields.items()))
+            fields_to_return = {field: value for field, value in fields.items() if field in listener['fields']}
             if len(fields_to_return) > 0:
                 listener["func"](fields_to_return)
 

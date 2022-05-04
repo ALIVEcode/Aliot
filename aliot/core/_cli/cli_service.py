@@ -42,7 +42,7 @@ def make_obj_config(obj_name: str, fields_to_overwrite: dict = None) -> result:
     try:
         config = get_config(DEFAULT_CONFIG_FILE_PATH)
         config.add_section(obj_name)
-        config[obj_name] |= make_config_section(obj_name) | fields_to_overwrite
+        config[obj_name] = make_config_section(obj_name) | fields_to_overwrite
         update_config(DEFAULT_CONFIG_FILE_PATH, config)
     except (ValueError, DuplicateSectionError) as e:
         return False, f"Could not update config file: {e!r}"

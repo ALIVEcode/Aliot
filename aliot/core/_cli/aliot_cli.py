@@ -77,6 +77,7 @@ def run(object_name: str):
             f"Make sure you wrote it correctly or create it using the"
             f" `aliot new` command."
         )
+        return
 
     obj_path = f"{obj_dir_path}/{obj_main}"
 
