@@ -56,14 +56,19 @@ from {variable}_state import {capitalized}State
 
 
 @{variable}.on_start()
-def main():
+def start():
     # write the code you want to execute once your object is connected to the server
+    pass
+
+
+@{variable}.on_end()
+def end():
+    # write the code you want to execute once your object is disconnected from the server
     pass
 
 
 {variable}.run()  # connects your object to the sever
 
-# the code here will only be executed when the object is disconnected from the server
 """
 
 
