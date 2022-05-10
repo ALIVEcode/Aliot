@@ -25,6 +25,7 @@ def main():
     # write the code you want to execute once your object is connected to the server
     pass
 
+
 {variable}.run()
 """
 

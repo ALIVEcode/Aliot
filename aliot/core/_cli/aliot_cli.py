@@ -64,6 +64,7 @@ def new(object_name: str, obj_id: str, main: str, template: str):
     )
     if success is None:
         return
+    # TODO add back the option to overwrite the config if success is False
 
     print_result(f"Object {object_name!r} created successfully", *service.make_obj(object_name, template.lower()))
 
