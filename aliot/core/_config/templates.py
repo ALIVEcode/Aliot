@@ -68,7 +68,6 @@ def end():
 
 
 {variable}.run()  # connects your object to the sever
-
 """
 
 
