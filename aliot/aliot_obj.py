@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from functools import wraps
 from threading import Thread
 from typing import TYPE_CHECKING
@@ -175,7 +176,7 @@ class AliotObj:
 
     # ################################# Decorators methods ################################# #
 
-    def on_start(self, *args, **kwargs):
+    def on_start(self, *args, callback=None, **kwargs):
         if kwargs is _no_value:
             kwargs = {}
         if args is _no_value:
@@ -196,9 +197,12 @@ class AliotObj:
 
             return innest
 
+        if callback is not None:
+            return inner(callback)
+
         return inner
 
-    def on_end(self, *args, **kwargs):
+    def on_end(self, *args, callback=None, **kwargs):
         if kwargs is _no_value:
             kwargs = {}
         if args is _no_value:
@@ -218,9 +222,12 @@ class AliotObj:
 
             return innest
 
+        if callback is not None:
+            return inner(callback)
+
         return inner
 
-    def on_recv(self, action_id: int, log_reception: bool = True):
+    def on_recv(self, action_id: int, log_reception: bool = True, *, callback=None):
         def inner(func):
             def wrapper(*args, **kwargs):
                 if log_reception:
@@ -235,9 +242,12 @@ class AliotObj:
             self.__protocols[action_id] = wrapper
             return wrapper
 
+        if callback is not None:
+            return inner(callback)
+
         return inner
 
-    def listen(self, fields: list[str]):
+    def listen(self, fields: list[str], *, callback=None):
         def inner(func):
             @wraps(func)
             def wrapper(fields: dict):
@@ -249,9 +259,12 @@ class AliotObj:
             })
             return wrapper
 
+        if callback is not None:
+            return inner(callback)
+
         return inner
 
-    def listen_broadcast(self):
+    def listen_broadcast(self, *, callback=None):
         def inner(func):
             @wraps(func)
             def wrapper(fields: dict):
@@ -260,9 +273,14 @@ class AliotObj:
             self.__broadcast_listener = wrapper
             return wrapper
 
+        if callback is not None:
+            return inner(callback)
+
         return inner
 
     def main_loop(self, repetitions=None):
+        warnings.warn("Deprecated, use on_start() instead", DeprecationWarning)
+
         def inner(main_loop_func):
             @wraps(main_loop_func)
             def wrapper():
