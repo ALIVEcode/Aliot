@@ -188,6 +188,7 @@ class AliotObj:
 
             self.__on_start = (f, args, kwargs)
 
+            @wraps(f)
             def innest():
                 print_err(f"You should not call the function {f.__name__!r} yourself. "
                           f"Aliot will take care of it and will "
@@ -213,6 +214,7 @@ class AliotObj:
                 raise ValueError(f"A function is already assigned to that role: {self.__on_end[0].__name__}")
             self.__on_end = (f, args, kwargs)
 
+            @wraps(f)
             def innest():
                 print_err(f"You should not call the function {f.__name__!r} yourself. "
                           f"Aliot will take care of it and will "
@@ -229,6 +231,7 @@ class AliotObj:
 
     def on_recv(self, action_id: int, log_reception: bool = True, *, callback=None):
         def inner(func):
+            @wraps(func)
             def wrapper(*args, **kwargs):
                 if log_reception:
                     print(f"The protocol: {action_id!r} was called with the arguments: "
@@ -278,7 +281,7 @@ class AliotObj:
 
         return inner
 
-    def main_loop(self, repetitions=None):
+    def main_loop(self, repetitions=None, *, callback=None):
         warnings.warn("Deprecated, use on_start() instead", DeprecationWarning)
 
         def inner(main_loop_func):
@@ -297,6 +300,9 @@ class AliotObj:
 
             self.__on_start = wrapper
             return wrapper
+
+        if callback is not None:
+            return inner(callback)
 
         return inner
 
