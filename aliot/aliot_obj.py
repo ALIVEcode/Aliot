@@ -186,11 +186,15 @@ class AliotObj:
                 raise ValueError(f"A function is already assigned to that role: {self.__on_start[0].__name__}")
 
             self.__on_start = (f, args, kwargs)
-            print_err(f"You should not call the function {f.__name__!r} yourself. "
-                      f"Aliot will take care of it and will "
-                      f"automatically call {f.__name__!r} when your object is connected to the website.",
-                      ShouldNotCallError.__name__)
-            exit(-1)
+
+            def innest():
+                print_err(f"You should not call the function {f.__name__!r} yourself. "
+                          f"Aliot will take care of it and will "
+                          f"automatically call {f.__name__!r} when your object is connected to the website.",
+                          ShouldNotCallError.__name__)
+                exit(-1)
+
+            return innest
 
         return inner
 
@@ -204,11 +208,15 @@ class AliotObj:
             if self.__on_end is not None:
                 raise ValueError(f"A function is already assigned to that role: {self.__on_end[0].__name__}")
             self.__on_end = (f, args, kwargs)
-            print_err(f"You should not call the function {f.__name__!r} yourself. "
-                      f"Aliot will take care of it and will "
-                      f"automatically call {f.__name__!r} when your object is disconnected to the website.",
-                      ShouldNotCallError.__name__)
-            exit(-1)
+
+            def innest():
+                print_err(f"You should not call the function {f.__name__!r} yourself. "
+                          f"Aliot will take care of it and will "
+                          f"automatically call {f.__name__!r} when your object is disconnected to the website.",
+                          ShouldNotCallError.__name__)
+                exit(-1)
+
+            return innest
 
         return inner
 
