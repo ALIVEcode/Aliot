@@ -5,6 +5,7 @@ from typing import TypeAlias
 from aliot.core._config.constants import CONFIG_FILE_NAME, DEFAULT_FOLDER, DEFAULT_CONFIG_FILE_PATH
 from aliot.core._config.config import make_config_section, get_default_code
 from aliot.core._config.config import update_config, config_init, get_config
+from aliot.core._config.templates import from_template
 
 result: TypeAlias = tuple[bool | None, str | None]
 
@@ -22,14 +23,16 @@ def make_init(folder: str) -> result:
     return True, None
 
 
-def make_obj(obj_name: str) -> result:
+def make_obj(obj_name: str, template: str = "complete", main_name: str = None) -> result:
+    if main_name is None:
+        main_name = obj_name
     path = f"{DEFAULT_FOLDER}/{obj_name}"
     if os.path.exists(path):
         return False, "Object already exists"
     try:
         os.makedirs(path, exist_ok=True)
-        with open(f"{path}/{obj_name}.py", "w+") as f:
-            f.write(get_default_code(obj_name))
+        with open(f"{path}/{main_name}.py", "w+") as f:
+            f.write(from_template(template, obj_name, path))
     except FileNotFoundError:
         return None, f"Could not create object script at {path!r}"
 

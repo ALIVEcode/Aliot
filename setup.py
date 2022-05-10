@@ -22,7 +22,7 @@ if __name__ == "__main__":
               "Programming Language :: Python :: 3",
               "Programming Language :: Python :: 3.10",
           ],
-          url="https://github.com/ALIVEcode/aliot.git",
+          url="https://github.com/ALIVEcode/aliot.git/aliot2",
           packages=find_packages(
               include=['aliot', 'aliot.*']),
           include_package_data=True,

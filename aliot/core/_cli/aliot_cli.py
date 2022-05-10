@@ -48,17 +48,24 @@ def init(folder: str):
 
 @main.command()
 @click.argument("object-name")
-# @click.option("-o", "mode", is_flag=True, help="Specify what you want to make")
-def new(object_name: str):
-    # TODO add --main to change the main value in the config.ini
-    # TODO add --obj-id to change the value of the obj_id in the config.ini
+@click.option("--obj-id", default=None)
+@click.option("--main", default=None)
+@click.option("-t", "--template", type=click.Choice(["blank", "minimal", "normal", "complete"], case_sensitive=False),
+              default="complete", prompt="Choose a template")
+def new(object_name: str, obj_id: str, main: str, template: str):
+    fields_to_overwrite = {}
+    if obj_id is not None:
+        fields_to_overwrite["obj_id"] = obj_id
+    if main is not None:
+        fields_to_overwrite["main"] = main
     success = print_result(
-        f"Object {object_name!r} config created successfully", *service.make_obj_config(object_name)
+        f"Object {object_name!r} config created successfully",
+        *service.make_obj_config(object_name, fields_to_overwrite)
     )
     if success is None:
         return
 
-    print_result(f"Object {object_name!r} created successfully", *service.make_obj(object_name))
+    print_result(f"Object {object_name!r} created successfully", *service.make_obj(object_name, template.lower()))
 
 
 @main.command()
