@@ -66,7 +66,7 @@ def new(object_name: str, obj_id: str, main: str, template: str):
         return
     # TODO add back the option to overwrite the config if success is False
 
-    print_result(f"Object {object_name!r} created successfully", *service.make_obj(object_name, template.lower()))
+    print_result(f"Object {object_name!r} created successfully", *service.make_obj(object_name, template.lower(), main))
 
 
 @main.command()
@@ -76,7 +76,10 @@ def run(object_name: str):
         print_err(f"Could not find config file at {DEFAULT_CONFIG_FILE_PATH!r} (try running `aliot init`)")
 
     obj_main = service.get_config(DEFAULT_CONFIG_FILE_PATH).get(object_name, "main",
-                                                                fallback=f"{object_name}.py")
+                                                                fallback=f"{object_name}.py").strip()
+    if not obj_main.endswith(".py"):
+        obj_main += ".py"
+
     obj_dir_path = f"{DEFAULT_FOLDER}/{object_name}"
 
     if not os.path.exists(obj_dir_path):
