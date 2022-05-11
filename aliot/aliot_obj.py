@@ -282,7 +282,10 @@ class AliotObj:
         return inner
 
     def main_loop(self, repetitions=None, *, callback=None):
-        warnings.warn("Deprecated, use on_start() instead", DeprecationWarning)
+        warnings.warn("main_loop() is deprecated and will be removed in a later version. "
+                      "You should use on_start() instead", DeprecationWarning)
+        print_warning("main_loop() is deprecated and will be removed in a later version. "
+                      "You should use on_start() instead")
 
         def inner(main_loop_func):
             @wraps(main_loop_func)

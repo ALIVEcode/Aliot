@@ -102,6 +102,15 @@ def run(object_name: str):
     Popen([sys.executable, obj_path]).communicate()
 
 
+@main.command()
+@click.option("--force", "-f", is_flag=True, default=False, help="If `True`, then aliot will automatically cleanup the "
+                                                                 "dead objects without asking")
+def cleanup(force: bool):
+    # TODO check if an object is defined in the config file but not in the project and vice-versa.
+    # If their is
+    pass
+
+
 @main.group()
 def check():
     """Group of commands to check the status of the aliot"""
