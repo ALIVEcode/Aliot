@@ -3,3 +3,6 @@ venv
 .vscode
 .eggs
 *.egg-info
+exemple
+build
+dist
