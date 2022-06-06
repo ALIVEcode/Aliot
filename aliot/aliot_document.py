@@ -7,11 +7,3 @@ class AliotDocument(dict):
         super(AliotDocument, self).__delitem__(key)
         # post to delete item in server
 
-
-
-doc = AliotDocument()
-
-doc["idk"] = 3
-
-del doc["idk"]
-

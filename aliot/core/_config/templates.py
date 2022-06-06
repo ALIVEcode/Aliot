@@ -36,11 +36,11 @@ def complete_template(obj_name: str, path: str):
 
     with open(f"{path}/{variable}_state.py", "w+") as f:
         f.write(f"""from dataclasses import dataclass
-from aliot.state import ObjectState
+from aliot.state import AliotObjState
 
 
 @dataclass
-class {capitalized}State(ObjectState):
+class {capitalized}State(AliotObjState):
     # write the different properties of your object
     pass
 """)
