@@ -1,13 +1,13 @@
 import os.path
 from configparser import DuplicateSectionError
-from typing import TypeAlias
+from typing import TypeAlias, Optional
 
 from aliot.core._config.constants import CONFIG_FILE_NAME, DEFAULT_FOLDER, DEFAULT_CONFIG_FILE_PATH
 from aliot.core._config.config import make_config_section, get_default_code
 from aliot.core._config.config import update_config, config_init, get_config
 from aliot.core._config.templates import from_template
 
-result: TypeAlias = tuple[bool | None, str | None]
+result: TypeAlias = tuple[Optional[bool], Optional[str]]
 
 
 def make_init(folder: str) -> result:

@@ -1,16 +1,13 @@
-import json
+import os
 import sys
+from subprocess import Popen
+from typing import Optional
 
 import click
-import requests
-from subprocess import Popen
-import os
 
 import aliot.core._cli.cli_service as service
-from aliot.core._config.constants import DEFAULT_FOLDER, CHECK_FOR_UPDATE_URL, CONFIG_FILE_NAME, \
-    DEFAULT_CONFIG_FILE_PATH
-
 from aliot.core._cli.utils import print_success, print_err, print_fail
+from aliot.core._config.constants import DEFAULT_FOLDER, CONFIG_FILE_NAME, DEFAULT_CONFIG_FILE_PATH
 
 
 @click.group()
@@ -29,7 +26,7 @@ def main():
     pass
 
 
-def print_result(success_msg: str, success: bool | None, err_msg: str) -> bool | None:
+def print_result(success_msg: str, success: Optional[bool], err_msg: str) -> Optional[bool]:
     if success:
         print_success(success_msg)
     elif success is None:

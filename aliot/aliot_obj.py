@@ -180,7 +180,7 @@ class AliotObj:
 
     # ################################# Decorators methods ################################# #
 
-    def on_start(self, *args, callback=None, **kwargs):
+    def on_start(self, *, args: list, kwargs: dict, callback=None):
         if kwargs is _no_value:
             kwargs = {}
         if args is _no_value:
@@ -207,7 +207,7 @@ class AliotObj:
 
         return inner
 
-    def on_end(self, *args, callback=None, **kwargs):
+    def on_end(self, *, args: list, kwargs: dict, callback=None):
         if kwargs is _no_value:
             kwargs = {}
         if args is _no_value:

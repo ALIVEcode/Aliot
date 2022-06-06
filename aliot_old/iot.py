@@ -1,5 +1,3 @@
-from typing import Union
-
 from threading import Thread
 import json
 import time

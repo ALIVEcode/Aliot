@@ -1,10 +1,10 @@
 import os.path
 from configparser import ConfigParser
-from typing import Literal
+from typing import Optional
 
 from aliot.core._config.constants import DEFAULT_CONFIG_FILE_PATH
 
-__config: ConfigParser | None = None
+__config: Optional[ConfigParser] = None
 __updated = False
 
 
