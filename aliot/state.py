@@ -5,7 +5,7 @@ import json
 class ObjectState:
 	def to_dict(self, document_name="document"):
 		d = {}
-		for key, val in self.__dict__:
+		for key, val in self.__dict__.items():
 			d[f"/{document_name}/{key}"] = val
 		return d
 
