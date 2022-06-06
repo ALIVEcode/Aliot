@@ -112,6 +112,10 @@ class AliotObj:
         # TODO add or delete a listener on the whole document and keep a local version up to date with it
         pass
 
+    def stop(self):
+        if self.__connected and self.__ws:
+            self.__ws.close()
+
     def update_component(self, id: str, value):
         self.__send_event(ALIVE_IOT_EVENT.UPDATE_COMPONENT, {
             'id': id, 'value': value
@@ -416,7 +420,7 @@ class AliotObj:
             print_warning("If you didn't see the 'Connected', "
                           "message verify that you are using the right key")
 
-    def __on_close(self, ws, *_):
+    def __on_close(self, ws: WebSocketApp, *_):
         self.__connected = False
         self.__connected_to_alivecode = False
         print_info(info_name="Connection closed")

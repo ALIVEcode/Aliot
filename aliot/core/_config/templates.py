@@ -20,12 +20,12 @@ def normal_template(obj_name: str):
 # write your listeners and receivers here
 
 
-@{variable}.on_start()
-def main():
+def start():
     # write the code you want to execute once your object is connected to the server
     pass
 
 
+{variable}.on_start(callback=start)
 {variable}.run()
 """
 
@@ -36,10 +36,11 @@ def complete_template(obj_name: str, path: str):
 
     with open(f"{path}/{variable}_state.py", "w+") as f:
         f.write(f"""from dataclasses import dataclass
+from aliot.state import ObjectState
 
 
 @dataclass
-class {capitalized}State:
+class {capitalized}State(ObjectState):
     # write the different properties of your object
     pass
 """)
@@ -56,18 +57,18 @@ from {variable}_state import {capitalized}State
 # write your listeners and receivers here
 
 
-@{variable}.on_start()
 def start():
     # write the code you want to execute once your object is connected to the server
     pass
 
 
-@{variable}.on_end()
 def end():
     # write the code you want to execute once your object is disconnected from the server
     pass
 
 
+{variable}.on_start(callback=start)
+{variable}.on_end(callback=end)
 {variable}.run()  # connects your object to the sever
 """
 
