@@ -373,6 +373,10 @@ class AliotObj:
                 if len(self.__listeners) == 0:
                     print_success(f"Object {self.name!r}", success_name="Connected")
                     self.connected_to_alivecode = True
+                    
+                    self.__on_start and Thread(target=self.__on_start[0], args=self.__on_start[1], kwargs=self.__on_start[2],
+                                                daemon=True).start()
+
                 else:
                     # Register listeners on ALIVEcode
                     fields = sorted(set([field for l in self.listeners for field in l['fields']]))
@@ -390,6 +394,8 @@ class AliotObj:
             case ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER_SUCCESS.value:
                 self.__listeners_set += 1
                 if self.__listeners_set == len(self.__listeners):
+                    self.__on_start and Thread(target=self.__on_start[0], args=self.__on_start[1], kwargs=self.__on_start[2],
+                                                daemon=True).start()
                     print_success(success_name="Connected")
                     self.connected_to_alivecode = True
 
@@ -423,10 +429,6 @@ class AliotObj:
         # if self.__main_loop is None:
         #     self.__ws.close()
         #     raise NotImplementedError("You must define a main loop")
-
-        self.__on_start and Thread(target=self.__on_start[0], args=self.__on_start[1], kwargs=self.__on_start[2],
-                                   daemon=True).start()
-
         # Thread(target=self.__main_loop, daemon=True).start()
 
     def __setup_ws(self, enable_trace: bool = False):
