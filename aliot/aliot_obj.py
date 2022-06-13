@@ -132,38 +132,39 @@ class AliotObj:
         })
 
     def get_doc(self, field: Optional[str] = None):
+
         if field:
             res = requests.post(f'{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.GET_FIELD.value}',
                                 {'id': self.object_id, 'field': field})
-            match res.status_code:
-                case 201:
-                    return json.loads(res.text) if res.text else None
-                case 403:
-                    print_err(
-                        f"While getting the field {field}, "
-                        f"request was Forbidden due to permission errors or project missing.")
-                case 500:
-                    print_err(
-                        f"While getting the field {field}, "
-                        f"something went wrong with the ALIVEcode's servers, please try again.")
-                case _:
-                    print_err(f"While getting the field {field}, please try again. {res.json()!r}")
+            status = res.status_code
+            if status == 201:
+                return json.loads(res.text) if res.text else None
+            elif status == 403:
+                print_err(
+                    f"While getting the field {field}, "
+                    f"request was Forbidden due to permission errors or project missing.")
+            elif status == 500:
+                print_err(
+                    f"While getting the field {field}, "
+                    f"something went wrong with the ALIVEcode's servers, please try again.")
+            else:
+                print_err(f"While getting the field {field}, please try again. {res.json()!r}")
         else:
             res = requests.post(f'{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.GET_DOC.value}',
                                 {'id': self.object_id})
-            match res.status_code:
-                case 201:
-                    return json.loads(res.text) if res.text else None
-                case 403:
-                    print_err(
-                        f"While getting the document, request was Forbidden due "
-                        f"to permission errors or project missing.")
-                case 500:
-                    print_err(
-                        f"While getting the document, something went wrong with the ALIVEcode's servers, "
-                        f"please try again.")
-                case _:
-                    print_err(f"While getting the document, please try again. {res.json()}")
+            status = res.status_code
+            if status == 201:
+                return json.loads(res.text) if res.text else None
+            elif status == 403:
+                print_err(
+                    f"While getting the document, request was Forbidden due "
+                    f"to permission errors or project missing.")
+            elif status == 500:
+                print_err(
+                    f"While getting the document, something went wrong with the ALIVEcode's servers, "
+                    f"please try again.")
+            else:
+                print_err(f"While getting the document, please try again. {res.json()}")
 
     def send_route(self, routePath: str, data: dict):
         self.__send_event(ALIVE_IOT_EVENT.SEND_ROUTE, {
@@ -364,6 +365,34 @@ class AliotObj:
         else:
             protocol(msg["value"])
 
+    def __connect_success(self):
+        if len(self.__listeners) == 0:
+            print_success(f"Object {self.name!r}", success_name="Connected")
+            self.connected_to_alivecode = True
+
+            self.__on_start and Thread(target=self.__on_start[0], args=self.__on_start[1],
+                                       kwargs=self.__on_start[2],
+                                       daemon=True).start()
+
+        else:
+            # Register listeners on ALIVEcode
+            fields = sorted(set([field for l in self.listeners for field in l['fields']]))
+            self.__send_event(ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER, {'fields': fields})
+
+    def __subscript_listener_success(self):
+        self.__listeners_set += 1
+        if self.__listeners_set == len(self.__listeners):
+            self.__on_start and Thread(target=self.__on_start[0], args=self.__on_start[1],
+                                       kwargs=self.__on_start[2],
+                                       daemon=True).start()
+            print_success(success_name="Connected")
+            self.connected_to_alivecode = True
+
+    def __handle_error(self, data):
+        print_err(data)
+        self.connected_to_alivecode = False
+        print_fail(failure_name="Connection closed due to an error")
+
     # ################################# Websocket methods ################################# #
 
     def __on_message(self, ws, message):
@@ -372,47 +401,26 @@ class AliotObj:
         event: str = msg['event']
         data = msg['data']
 
-        match event:
-            case ALIVE_IOT_EVENT.CONNECT_SUCCESS.value:
-                if len(self.__listeners) == 0:
-                    print_success(f"Object {self.name!r}", success_name="Connected")
-                    self.connected_to_alivecode = True
-                    
-                    self.__on_start and Thread(target=self.__on_start[0], args=self.__on_start[1], kwargs=self.__on_start[2],
-                                                daemon=True).start()
+        if event == ALIVE_IOT_EVENT.CONNECT_SUCCESS.value:
+            self.__connect_success()
 
-                else:
-                    # Register listeners on ALIVEcode
-                    fields = sorted(set([field for l in self.listeners for field in l['fields']]))
-                    self.__send_event(ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER, {'fields': fields})
+        elif event == ALIVE_IOT_EVENT.RECEIVE_ACTION.value:
+            self.__execute_protocol(data)
 
-            case ALIVE_IOT_EVENT.RECEIVE_ACTION.value:
-                self.__execute_protocol(data)
+        elif event == ALIVE_IOT_EVENT.RECEIVE_LISTEN.value:
+            self.__execute_listen(data['fields'])
 
-            case ALIVE_IOT_EVENT.RECEIVE_LISTEN.value:
-                self.__execute_listen(data['fields'])
+        elif event == ALIVE_IOT_EVENT.RECEIVE_BROADCAST.value:
+            self.__execute_broadcast(data['data'])
 
-            case ALIVE_IOT_EVENT.RECEIVE_BROADCAST.value:
-                self.__execute_broadcast(data['data'])
+        elif event == ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER_SUCCESS.value:
+            self.__subscript_listener_success()
 
-            case ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER_SUCCESS.value:
-                self.__listeners_set += 1
-                if self.__listeners_set == len(self.__listeners):
-                    self.__on_start and Thread(target=self.__on_start[0], args=self.__on_start[1], kwargs=self.__on_start[2],
-                                                daemon=True).start()
-                    print_success(success_name="Connected")
-                    self.connected_to_alivecode = True
+        elif event == ALIVE_IOT_EVENT.ERROR.value:
+            self.__handle_error(data)
 
-            case ALIVE_IOT_EVENT.ERROR.value:
-                print_err(data)
-                self.connected_to_alivecode = False
-                print_fail(failure_name="Connection closed due to an error")
-
-            case ALIVE_IOT_EVENT.PING.value:
-                self.__send_event(ALIVE_IOT_EVENT.PONG, None)
-
-            case None:
-                pass
+        elif event == ALIVE_IOT_EVENT.PING.value:
+            self.__send_event(ALIVE_IOT_EVENT.PONG, None)
 
     def __on_error(self, ws: WebSocketApp, error):
         print_err(f"{error!r}")

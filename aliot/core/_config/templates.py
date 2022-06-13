@@ -1,4 +1,4 @@
-def minimal_template(obj_name: str):
+def minimal_template(obj_name: str, path: str):
     variable = obj_name.replace('-', '_')
     return f"""from aliot.aliot_obj import AliotObj
 
@@ -10,7 +10,7 @@ def minimal_template(obj_name: str):
 """
 
 
-def normal_template(obj_name: str):
+def normal_template(obj_name: str, path: str):
     variable = obj_name.replace('-', '_')
     return f"""from aliot.aliot_obj import AliotObj
 
@@ -73,17 +73,18 @@ def end():
 """
 
 
-def blank_template():
+def blank_template(obj_name: str, path: str):
     return ""
 
 
+__templates = {
+    "minimal": minimal_template,
+    "normal": normal_template,
+    "complete": complete_template,
+    "blank": blank_template,
+}
+
 def from_template(template_name: str, obj_name: str, path: str):
-    match template_name:
-        case "minimal":
-            return minimal_template(obj_name)
-        case "normal":
-            return normal_template(obj_name)
-        case "complete":
-            return complete_template(obj_name, path)
-        case "blank" | _:
-            return blank_template()
+    if template_name not in __templates:
+        raise ValueError(f"Unknown template {template_name}")
+    return __templates[template_name](obj_name, path)
