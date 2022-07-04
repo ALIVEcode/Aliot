@@ -170,7 +170,7 @@ class AliotObj:
             'data': data
         })
 
-    def send_action(self, target_id: str, action_id: int, value=""):
+    def send_action(self, target_id: str, action_id: str, value=""):
         self.__send_event(ALIVE_IOT_EVENT.SEND_ACTION, {
             'targetId': target_id,
             'actionId': action_id,
