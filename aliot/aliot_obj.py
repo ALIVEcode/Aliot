@@ -49,7 +49,6 @@ class AliotObj:
         self.__api_url: str = self.__get_config_value("api_url")
         self.__ws_url: str = self.__get_config_value("ws_url")
         self.__log = False
-        self.__document_manager = AliotDocument()
 
     # ################################# Properties ################################# #
 
@@ -166,16 +165,16 @@ class AliotObj:
             else:
                 print_err(f"While getting the document, please try again. {res.json()}")
 
-    def send_route(self, routePath: str, data: dict):
+    def send_route(self, route_path: str, data: dict):
         self.__send_event(ALIVE_IOT_EVENT.SEND_ROUTE, {
-            'routePath': routePath,
+            'routePath': route_path,
             'data': data
         })
 
-    def send_action(self, targetId: str, actionId: int, value=""):
+    def send_action(self, target_id: str, action_id: int, value=""):
         self.__send_event(ALIVE_IOT_EVENT.SEND_ACTION, {
-            'targetId': targetId,
-            'actionId': actionId,
+            'targetId': target_id,
+            'actionId': action_id,
             'value': value
         })
 
@@ -234,7 +233,7 @@ class AliotObj:
 
         return inner
 
-    def on_recv(self, action_id: int, log_reception: bool = True, *, callback=None):
+    def on_action_recv(self, action_id: str, log_reception: bool = True, *, callback=None):
         def inner(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -255,7 +254,7 @@ class AliotObj:
 
         return inner
 
-    def listen(self, fields: list[str], *, callback=None):
+    def listen_doc(self, fields: list[str], *, callback=None):
         def inner(func):
             @wraps(func)
             def wrapper(fields: dict):
@@ -379,7 +378,7 @@ class AliotObj:
             fields = sorted(set([field for l in self.listeners for field in l['fields']]))
             self.__send_event(ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER, {'fields': fields})
 
-    def __subscript_listener_success(self):
+    def __subscribe_listener_success(self):
         self.__listeners_set += 1
         if self.__listeners_set == len(self.__listeners):
             self.__on_start and Thread(target=self.__on_start[0], args=self.__on_start[1],
@@ -414,7 +413,7 @@ class AliotObj:
             self.__execute_broadcast(data['data'])
 
         elif event == ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER_SUCCESS.value:
-            self.__subscript_listener_success()
+            self.__subscribe_listener_success()
 
         elif event == ALIVE_IOT_EVENT.ERROR.value:
             self.__handle_error(data)
