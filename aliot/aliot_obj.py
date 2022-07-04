@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 import requests
 
-from aliot.aliot_document import AliotDocument
 from aliot.exceptions.should_not_call_error import ShouldNotCallError
 
 if TYPE_CHECKING:
