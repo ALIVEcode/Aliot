@@ -20,13 +20,13 @@ if __name__ == "__main__":
           long_description_content_type="text/markdown",
           classifiers=[
               "Programming Language :: Python :: 3",
-              "Programming Language :: Python :: 3.9",
+              "Programming Language :: Python :: 3.7",
           ],
           url="https://github.com/ALIVEcode/aliot/tree/aliot2",
           packages=find_packages(
               include=['aliot', 'aliot.*']),
           include_package_data=True,
-          python_requires=">=3.9",
+          python_requires=">=3.7",
           install_requires=["websocket-client~=1.3.2",
                             "rich~=12.3.0",
                             "click~=8.1.3",

@@ -1,16 +1,14 @@
-import os.path
+import os
 from configparser import DuplicateSectionError
-from typing import TypeAlias, Optional
+from typing import Optional
 
 from aliot.core._config.constants import CONFIG_FILE_NAME, DEFAULT_FOLDER, DEFAULT_CONFIG_FILE_PATH
 from aliot.core._config.config import make_config_section, get_default_code
 from aliot.core._config.config import update_config, config_init, get_config
 from aliot.core._config.templates import from_template
 
-result: TypeAlias = tuple[Optional[bool], Optional[str]]
 
-
-def make_init(folder: str) -> result:
+def make_init(folder: str):
     """Makes the _config.ini"""
     os.makedirs(folder, exist_ok=True)
     path = f"{folder}/{CONFIG_FILE_NAME}"
@@ -23,7 +21,7 @@ def make_init(folder: str) -> result:
     return True, None
 
 
-def make_obj(obj_name: str, template: str = "complete", main_name: str = None) -> result:
+def make_obj(obj_name: str, template: str = "complete", main_name: str = None):
     if main_name is None:
         main_name = obj_name
     path = f"{DEFAULT_FOLDER}/{obj_name}"
@@ -39,13 +37,15 @@ def make_obj(obj_name: str, template: str = "complete", main_name: str = None) -
     return True, None
 
 
-def make_obj_config(obj_name: str, fields_to_overwrite: dict = None) -> result:
+def make_obj_config(obj_name: str, fields_to_overwrite: dict = None):
     if fields_to_overwrite is None:
         fields_to_overwrite = {}
     try:
         config = get_config(DEFAULT_CONFIG_FILE_PATH)
         config.add_section(obj_name)
-        config[obj_name] = make_config_section(obj_name) | fields_to_overwrite
+        tmp_dict = make_config_section(obj_name)
+        tmp_dict.update(fields_to_overwrite)
+        config[obj_name] = tmp_dict
         update_config(DEFAULT_CONFIG_FILE_PATH, config)
     except (ValueError, DuplicateSectionError) as e:
         return False, f"Could not update config file: {e!r}"

@@ -105,11 +105,6 @@ class AliotObj:
         self.__log = log
         self.__setup_ws(enable_trace)
 
-    def keep_document_live(self, keep_doc_live: bool = True, /):
-        """ Maybe do, maybe don't? """
-        # TODO add or delete a listener on the whole document and keep a local version up to date with it
-        pass
-
     def stop(self):
         if self.__connected and self.__ws:
             self.__ws.close()
@@ -119,7 +114,7 @@ class AliotObj:
             'id': id, 'value': value
         })
 
-    def broadcast(self, data: dict):
+    def send_broadcast(self, data: dict):
         self.__send_event(ALIVE_IOT_EVENT.SEND_BROADCAST, {
             'data': data
         })
@@ -231,6 +226,28 @@ class AliotObj:
             return inner(callback)
 
         return inner
+    
+    """ DEPRECATED METHOD """
+    def on_recv(self, action_id: str, log_reception: bool = True, *, callback=None):
+        def inner(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                if log_reception:
+                    print(f"The protocol: {action_id!r} was called with the arguments: "
+                          f"{args}")
+                res = func(*args, **kwargs)
+                self.__send_event(ALIVE_IOT_EVENT.SEND_ACTION_DONE, {
+                    "actionId": action_id,
+                    "value": res
+                })
+
+            self.__protocols[action_id] = wrapper
+            return wrapper
+
+        if callback is not None:
+            return inner(callback)
+
+        return inner
 
     def on_action_recv(self, action_id: str, log_reception: bool = True, *, callback=None):
         def inner(func):
@@ -252,6 +269,25 @@ class AliotObj:
             return inner(callback)
 
         return inner
+
+    """ DEPRECATED METHOD """
+    def listen(self, fields: list[str], *, callback=None):
+        def inner(func):
+            @wraps(func)
+            def wrapper(fields: dict):
+                result = func(fields)
+
+            self.__listeners.append({
+                'func': wrapper,
+                'fields': fields
+            })
+            return wrapper
+
+        if callback is not None:
+            return inner(callback)
+
+        return inner
+        
 
     def listen_doc(self, fields: list[str], *, callback=None):
         def inner(func):
