@@ -165,11 +165,13 @@ class AliotObj:
             'data': data
         })
 
-    def send_action(self, target_id: str, action_id: str, value=""):
+    def send_action(self, target_id: str, action_id: str, data: dict | None=None):
+        if data == None:
+            data = {}
         self.__send_event(ALIVE_IOT_EVENT.SEND_ACTION, {
             'targetId': target_id,
             'actionId': action_id,
-            'value': value
+            'value': data
         })
 
     # ################################# Decorators methods ################################# #
