@@ -428,10 +428,11 @@ class AliotObj:
             print_success(success_name="Connected")
             self.connected_to_alivecode = True
 
-    def __handle_error(self, data):
+    def __handle_error(self, data, terminate: bool = False):
         print_err(data)
-        self.connected_to_alivecode = False
-        print_fail(failure_name="Connection closed due to an error")
+        if terminate:
+            self.connected_to_alivecode = False
+            print_fail(failure_name="Connection closed due to an error")
 
     # ################################# Websocket methods ################################# #
 
@@ -457,7 +458,10 @@ class AliotObj:
             self.__subscribe_listener_success()
 
         elif event == ALIVE_IOT_EVENT.ERROR.value:
-            self.__handle_error(data)
+            if data == 'Forbidden. Invalid credentials.':
+                self.__handle_error(data, True)
+            else:
+                self.__handle_error(data)
 
         elif event == ALIVE_IOT_EVENT.PING.value:
             self.__send_event(ALIVE_IOT_EVENT.PONG, None)
@@ -477,7 +481,14 @@ class AliotObj:
     def __on_open(self, ws):
         # Register IoTObject on ALIVEcode
         self.__connected = True
-        self.__send_event(ALIVE_IOT_EVENT.CONNECT_OBJECT, { 'id': self.object_id, 'token': self.auth_token })
+        token = self.auth_token
+        if token is None:
+            self.__handle_error(
+                "IoTObjects now require an AuthToken to securely connect to ALIVEiot. Please make sure to register an AuthToken on your IoTObject on ALIVEcode from your IoT Dashboard and add in your config.ini: auth_token = <your_auth_token>",
+                terminate=True
+            )
+        else:
+            self.__send_event(ALIVE_IOT_EVENT.CONNECT_OBJECT, { 'id': self.object_id, 'token': self.auth_token })
         # if self.__main_loop is None:
         #     self.__ws.close()
         #     raise NotImplementedError("You must define a main loop")
