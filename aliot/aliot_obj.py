@@ -76,6 +76,10 @@ class AliotObj:
         return self.__get_config_value("obj_id")
 
     @property
+    def auth_token(self):
+        return self.__get_config_value("auth_token")
+
+    @property
     def protocols(self):
         """ Returns a copy of the protocols dict """
         return self.__protocols.copy()
@@ -473,7 +477,7 @@ class AliotObj:
     def __on_open(self, ws):
         # Register IoTObject on ALIVEcode
         self.__connected = True
-        self.__send_event(ALIVE_IOT_EVENT.CONNECT_OBJECT, {'id': self.object_id})
+        self.__send_event(ALIVE_IOT_EVENT.CONNECT_OBJECT, { 'id': self.object_id, 'token': self.auth_token })
         # if self.__main_loop is None:
         #     self.__ws.close()
         #     raise NotImplementedError("You must define a main loop")
