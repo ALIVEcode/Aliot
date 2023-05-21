@@ -45,8 +45,8 @@ def get_config(config_file_path: str = DEFAULT_CONFIG_FILE_PATH) -> ConfigParser
 
 def make_config_section(obj_name: str):
     return {
-        "obj_id": f"Paste the id of {obj_name} here :)",
-        "auth_token": f"Paste the auth_token of {obj_name} here :)",
+        "obj_id": f"Paste the id of {obj_name} from ALIVEcode here :)",
+        "auth_token": f"Paste the auth_token of {obj_name} from ALIVEcode here :)",
         "main": f"{obj_name}.py"
     }
 

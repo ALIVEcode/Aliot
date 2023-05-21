@@ -48,7 +48,7 @@ def init(folder: str):
 @click.option("--obj-id", default=None)
 @click.option("--main", default=None)
 @click.option("-t", "--template", type=click.Choice(["blank", "minimal", "normal", "complete"], case_sensitive=False),
-              default="complete", prompt="Choose a template")
+              default="normal", prompt="Choose a template")
 def new(object_name: str, obj_id: str, main: str, template: str):
     fields_to_overwrite = {}
     if obj_id is not None:
