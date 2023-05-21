@@ -5,6 +5,7 @@ import warnings
 from functools import wraps
 from threading import Thread
 from typing import TYPE_CHECKING
+from time import ctime, sleep
 
 import requests
 
@@ -396,12 +397,7 @@ class AliotObj:
         protocol = self.protocols.get(msg_id)
 
         if protocol is None:
-            if self.connected_to_alivecode:
-                self.connected_to_alivecode = False
             print_err(f"The protocol with the id {msg_id!r} is not implemented")
-
-            # magic of python
-            print_info("Connection CLOSED")
         else:
             protocol(msg["value"])
 
@@ -477,6 +473,10 @@ class AliotObj:
         self.__connected_to_alivecode = False
         print_info(info_name="Connection closed")
         self.__on_end and self.__on_end[0](*self.__on_end[1], **self.__on_end[2])
+
+        print ("Retrying connection in 5 seconds. Current time : %s" % ctime())
+        sleep(5)
+        self.run() # retry per 5 seconds
 
     def __on_open(self, ws):
         # Register IoTObject on ALIVEcode
