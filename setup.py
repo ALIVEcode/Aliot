@@ -10,31 +10,30 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / "README.md").read_text()
 
 if __name__ == "__main__":
-    setup(name='aliot-py',
-          author='Mathis Laroche, Enric Soldevila',
-          author_email="alivecode.developers@gmail.com",
-          version=aliot.__version__,
-          description='Aliot-py is the python implementation of the Aliot library, an'
-                      ' IOT library made to work with the ALIVEIoT ecosystem (see https://alivecode.ca/iot)',
-          long_description=README,
-          long_description_content_type="text/markdown",
-          classifiers=[
-              "Programming Language :: Python :: 3",
-              "Programming Language :: Python :: 3.7",
-          ],
-          url="https://github.com/ALIVEcode/aliot/tree/aliot2",
-          packages=find_packages(
-              include=['aliot', 'aliot.*']),
-          include_package_data=True,
-          python_requires=">=3.7",
-          install_requires=["websocket-client~=1.3.2",
-                            "rich~=12.3.0",
-                            "click~=8.1.3",
-                            "requests~=2.27.1",
-                            "setuptools==62.1.0"
-                            ],
-          setup_requires="setuptools",
-          entry_points={
-              "console_scripts": ["aliot = aliot.core._cli.aliot_cli:main"]
-          },
-          )
+    setup(
+        name="aliot-py",
+        author="Innovations ALIVEcode inc.",
+        author_email="alivecode.developers@gmail.com",
+        version=aliot.__version__,
+        description="Aliot-py is the python implementation of the Aliot library, an"
+        " IOT library made to work with the ALIVEIoT ecosystem (see https://alivecode.ca/iot)",
+        long_description=README,
+        long_description_content_type="text/markdown",
+        classifiers=[
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.7",
+        ],
+        url="https://github.com/ALIVEcode/aliot/tree/aliot2",
+        packages=find_packages(include=["aliot", "aliot.*"]),
+        include_package_data=True,
+        python_requires=">=3.7",
+        install_requires=[
+            "websocket-client~=1.3.2",
+            "rich~=12.3.0",
+            "click~=8.1.3",
+            "requests~=2.27.1",
+            "setuptools==62.1.0",
+        ],
+        setup_requires="setuptools",
+        entry_points={"console_scripts": ["aliot = aliot.core._cli.aliot_cli:main"]},
+    )

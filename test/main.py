@@ -1,5 +1,6 @@
 from aliot.aliot_obj import AliotObj
 from test_state import TestState
+from time import sleep
 
 test = AliotObj("test")
 
@@ -12,7 +13,8 @@ test_state = TestState()
 
 def start():
     # write the code you want to execute once your object is connected to the server
-    pass
+    sleep(5)
+    test.stop()
 
 
 def end():
