@@ -514,17 +514,30 @@ class AliotObj:
 
     def __on_error(self, ws: WebSocketApp, error):
         print_err(f"{error!r}")
+        
+        if isinstance(error, KeyboardInterrupt):
+            self.__stopped = True
+        
         if isinstance(error, ConnectionResetError):
             print_warning(
                 "If you didn't see the 'Connected', "
                 "message verify that you are using the right key"
             )
 
-    def __on_close(self, ws: WebSocketApp, *_):
+    def __on_close(self, ws: WebSocketApp, status_code, msg):
         self.__connected = False
         self.__connected_to_alivecode = False
-        print_info(info_name="Connection closed")
         self.__on_end and self.__on_end[0](*self.__on_end[1], **self.__on_end[2])
+
+        if status_code is not None or msg is not None:
+            if status_code is not None:
+                print_fail(failure_name="Status code : %s" % status_code)
+            if msg is not None:
+                print_fail(failure_name="Message : %s" % msg)
+            print_fail(failure_name="Connection closed")
+        
+        else:
+            print_info(info_name="Connection closed")
 
         if not self.__stopped:
             print("Retrying connection in 5 seconds. Current time : %s" % ctime())
