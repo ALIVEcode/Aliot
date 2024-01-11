@@ -29,7 +29,7 @@ def make_obj(obj_name: str, template: str = "complete", main_name: str = None):
         return False, "Object already exists"
     try:
         os.makedirs(path, exist_ok=True)
-        with open(f"{path}/{main_name}.py", "w+") as f:
+        with open(f"{path}/{main_name}.py", "w+", encoding="utf-8") as f:
             f.write(from_template(template, obj_name, path))
     except FileNotFoundError:
         return None, f"Could not create object script at {path!r}"

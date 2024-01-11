@@ -1,31 +1,37 @@
 def minimal_template(obj_name: str, path: str):
     variable = obj_name.replace('-', '_')
-    return f"""from aliot.aliot_obj import AliotObj
+    return f"""# Documentation: https://alivecode.ca/docs/aliot
+from aliot.aliot_obj import AliotObj
 
+# Création de l'objet à partir du fichier de configuration
 {variable} = AliotObj("{obj_name}")
 
-# write your code here
+# Écrivez votre code ici
 
+# Connection de l'objet au serveur ALIVEcode
 {variable}.run()
 """
 
 
 def normal_template(obj_name: str, path: str):
     variable = obj_name.replace('-', '_')
-    return f"""from aliot.aliot_obj import AliotObj
+    return f"""# Documentation: https://alivecode.ca/docs/aliot
+from aliot.aliot_obj import AliotObj
 
+# Création de l'objet à partir du fichier de configuration
 {variable} = AliotObj("{obj_name}")
 
 
-# write your listeners and receivers here
-
-
 def start():
-    # write the code you want to execute once your object is connected to the server
+    # Écrivez le code que vous voulez exécuter une fois que l'objet
+    # est connecté au serveur
     pass
 
 
-{variable}.on_start(callback=start)
+# Appel de la fonction start une fois que l'objet se connecte au serveur
+{variable}.on_start(start)
+
+# Connection de l'objet au serveur ALIVEcode
 {variable}.run()
 """
 
@@ -34,42 +40,47 @@ def complete_template(obj_name: str, path: str):
     variable = obj_name.replace('-', '_')
     capitalized = "".join(letter.capitalize() for letter in variable.split("_"))
 
-    with open(f"{path}/{variable}_state.py", "w+") as f:
+    with open(f"{path}/{variable}_state.py", "w+", encoding="utf-8") as f:
         f.write(f"""from dataclasses import dataclass
 from aliot.state import AliotObjState
 
 
 @dataclass
 class {capitalized}State(AliotObjState):
-    # write the different properties of your object
+    # Écrivez ici les attributs de l'objet
     pass
 """)
 
-    return f"""from aliot.aliot_obj import AliotObj
+    return f"""# Documentation: https://alivecode.ca/docs/aliot
+from aliot.aliot_obj import AliotObj
 from {variable}_state import {capitalized}State
 
+# Création de l'objet à partir du fichier de configuration
 {variable} = AliotObj("{obj_name}")
 
-# the state of your object should be defined in this class
+# L'état de l'objet devrait être défini dans cette classe
 {variable}_state = {capitalized}State()
 
 
-# write your listeners and receivers here
-
-
 def start():
-    # write the code you want to execute once your object is connected to the server
+    # Écrivez le code que vous voulez exécuter une fois que l'objet
+    # est connecté au serveur
     pass
 
 
 def end():
-    # write the code you want to execute once your object is disconnected from the server
+    # Écrivez le code que vous voulez exécuter une fois que l'objet
+    # est déconnecté du serveur
     pass
 
 
-{variable}.on_start(callback=start)
-{variable}.on_end(callback=end)
-{variable}.run()  # connects your object to the sever
+# Appel de la fonction start une fois que l'objet se connecte au serveur
+{variable}.on_start(start)
+# Appel de la fonction end une fois que l'objet se déconnecte du serveur
+{variable}.on_end(end)
+
+# Connection de l'objet au serveur ALIVEcode
+{variable}.run()
 """
 
 

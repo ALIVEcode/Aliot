@@ -23,7 +23,7 @@ def update_config(config_file_path: str, config: ConfigParser):
     if config_file_path is None:
         raise ValueError("Config file path not set")
 
-    with open(config_file_path, "w") as config_file:
+    with open(config_file_path, "w", encoding="utf-8") as config_file:
         config.write(config_file)
 
     global __updated

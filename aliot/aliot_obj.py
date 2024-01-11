@@ -198,7 +198,7 @@ class AliotObj:
     # ################################# Decorators methods ################################# #
 
     def on_start(
-        self, *, args: list = _no_value, kwargs: dict = _no_value, callback=None
+        self, callback=None, *, args: list = _no_value, kwargs: dict = _no_value
     ):
         if kwargs is _no_value:
             kwargs = {}
@@ -231,7 +231,7 @@ class AliotObj:
         return inner
 
     def on_end(
-        self, *, args: list = _no_value, kwargs: dict = _no_value, callback=None
+        self, callback=None, *, args: list = _no_value, kwargs: dict = _no_value
     ):
         if kwargs is _no_value:
             kwargs = {}
@@ -264,7 +264,7 @@ class AliotObj:
 
     """ DEPRECATED METHOD """
 
-    def on_recv(self, action_id: str, log_reception: bool = True, *, callback=None):
+    def on_recv(self, action_id: str, callback=None, log_reception: bool = True):
         def inner(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -288,7 +288,7 @@ class AliotObj:
         return inner
 
     def on_action_recv(
-        self, action_id: str, log_reception: bool = True, *, callback=None
+        self, action_id: str, callback=None, log_reception: bool = True
     ):
         def inner(func):
             @wraps(func)
@@ -314,7 +314,7 @@ class AliotObj:
 
     """ DEPRECATED METHOD """
 
-    def listen(self, fields: list[str], *, callback=None):
+    def listen(self, fields: list[str], callback=None):
         def inner(func):
             @wraps(func)
             def wrapper(fields: dict):
@@ -328,7 +328,7 @@ class AliotObj:
 
         return inner
 
-    def listen_doc(self, fields: list[str], *, callback=None):
+    def listen_doc(self, fields: list[str], callback=None):
         def inner(func):
             @wraps(func)
             def wrapper(fields: dict):
@@ -342,7 +342,7 @@ class AliotObj:
 
         return inner
 
-    def listen_broadcast(self, *, callback=None):
+    def listen_broadcast(self, callback=None):
         def inner(func):
             @wraps(func)
             def wrapper(fields: dict):
