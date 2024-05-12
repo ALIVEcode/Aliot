@@ -461,16 +461,14 @@ class AliotObj:
             self.__send_event(ALIVE_IOT_EVENT.SUBSCRIBE_LISTENER, {"fields": fields})
 
     def __subscribe_listener_success(self):
-        self.__listeners_set += 1
-        if self.__listeners_set == len(self.__listeners):
-            self.__on_start and Thread(
-                target=self.__on_start[0],
-                args=self.__on_start[1],
-                kwargs=self.__on_start[2],
-                daemon=True,
-            ).start()
-            print_success(success_name="Connected")
-            self.connected_to_alivecode = True
+        print_success(success_name="Connected")
+        self.connected_to_alivecode = True
+        self.__on_start and Thread(
+            target=self.__on_start[0],
+            args=self.__on_start[1],
+            kwargs=self.__on_start[2],
+            daemon=True,
+        ).start()
 
     def __handle_error(self, data, terminate: bool = False):
         print_err(data)
