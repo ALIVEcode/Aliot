@@ -114,9 +114,30 @@ class AliotObj:
 
     # ################################# Public methods ################################# #
 
-    def run(self, *, enable_trace: bool = False, log: bool = False):
+    def run(self, *, enable_trace: bool = False, log: bool = False, retry = True, retry_time = None):
         self.__log = log
         self.__setup_ws(enable_trace)
+        
+        first_retry = True
+        self.retry_connection_amount = 0
+
+        # Retry connection in a loop
+        while retry and not self.__stopped:
+            waitTime = retry_time or (5 * 2 ** self.retry_connection_amount)
+            
+            print_info(f"Retrying connection in {waitTime} seconds. Current time : {ctime()}")
+            
+            if first_retry:
+                first_retry = False
+                print_info("Please note that you can disable connect retry with retry=False when calling run(). You can also change the retry time to a fix amount by passing retry_time=<SECONDS> .")
+            
+            sleep(waitTime)
+            self.__setup_ws(enable_trace)
+            
+            # Constraint retry amount for exponential wait time
+            self.retry_connection_amount += 1
+            if self.retry_connection_amount > 7:
+                self.retry_connection_amount = 7
 
     def stop(self):
         if self.__connected and self.__ws:
@@ -537,14 +558,11 @@ class AliotObj:
         else:
             print_info(info_name="Connection closed")
 
-        if not self.__stopped:
-            print("Retrying connection in 5 seconds. Current time : %s" % ctime())
-            sleep(5)
-            self.run()  # retry per 5 seconds
 
     def __on_open(self, ws):
         # Register IoTObject on ALIVEcode
         self.__connected = True
+        self.retry_connection_amount = 0
         token = self.auth_token
         if token is None:
             self.__handle_error(
