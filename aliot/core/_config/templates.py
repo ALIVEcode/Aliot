@@ -29,7 +29,7 @@ def start():
 
 
 # Appel de la fonction start une fois que l'objet se connecte au serveur
-{variable}.on_start(start)
+{variable}.on_start(callback=start)
 
 # Connection de l'objet au serveur ALIVEcode
 {variable}.run()
@@ -75,9 +75,9 @@ def end():
 
 
 # Appel de la fonction start une fois que l'objet se connecte au serveur
-{variable}.on_start(start)
+{variable}.on_start(callback=start)
 # Appel de la fonction end une fois que l'objet se déconnecte du serveur
-{variable}.on_end(end)
+{variable}.on_end(callback=end)
 
 # Connection de l'objet au serveur ALIVEcode
 {variable}.run()
