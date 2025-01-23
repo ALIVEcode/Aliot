@@ -203,6 +203,17 @@ class AliotObj:
             else:
                 print_err(f"While getting the document, please try again. {res.json()}")
 
+
+    def upload_image(self, buffer):
+        files = {'file': ('image.jpg', buffer, 'image/jpeg')}
+        data = {"id": self.object_id}
+        requests.post(
+            f"{self.__api_url}/iot/aliot/{ALIVE_IOT_EVENT.UPLOAD_IMAGE.value}", 
+            files=files,
+            data=data
+        )
+
+
     def send_route(self, route_path: str, data: dict):
         self.__send_event(
             ALIVE_IOT_EVENT.SEND_ROUTE, {"routePath": route_path, "data": data}

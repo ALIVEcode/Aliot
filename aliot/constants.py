@@ -75,3 +75,5 @@ class ALIVE_IOT_EVENT(Enum):
     GET_DOC = "get_doc"
     # * Get the field of a document of a project #
     GET_FIELD = "get_field"
+    # * Upload an image  #
+    UPLOAD_IMAGE="upload_image"
